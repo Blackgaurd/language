@@ -1,18 +1,29 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "Use newtype instead of data" #-}
 module TreeWalk where
-
-{- TREE WALKING INTERPRETER -}
 
 import qualified Ast
 import qualified Data.Map as Map
 import GHC.Integer (divInteger)
 
+{- INTERPRETER TYPES -}
 data Value = Num Integer | Void deriving (Show)
 type VarEnv = Map.Map Ast.Identifier Value
 type ProcEnv = Map.Map Ast.Identifier Ast.Procedure
+type Builtin = [Value] -> IO Value
 
+{- BUILTINS -}
+builtins :: Map.Map Ast.Identifier Builtin
+builtins = Map.fromList [("disp", dispValue)]
+
+isBuiltin :: Ast.Identifier -> Bool
+isBuiltin name = Map.member name builtins
+
+dispValue :: [Value] -> IO Value
+dispValue [] = putStrLn "" >> return Void
+dispValue [Num x] = print x >> return Void
+dispValue [Void] = putStrLn "<void>" >> return Void
+dispValue _ = error "disp only takes one argument"
+
+{- TREE WALKING INTERPRETER -}
 valueBinOp :: (Integer -> Integer -> Integer) -> Value -> Value -> Value
 valueBinOp op (Num a) (Num b) = Num (op a b)
 valueBinOp _ Void _ = error "binary operator not supported for void"
@@ -32,39 +43,46 @@ unOpTrans :: Ast.UnOp -> (Value -> Value)
 unOpTrans Ast.Pos = valueUnOp id
 unOpTrans Ast.Neg = valueUnOp negate
 
-interpExpr :: VarEnv -> ProcEnv -> Ast.Expr -> Value
-interpExpr varEnv procEnv (Ast.Bin op lhs rhs) = binOpTrans op l r
- where
-  l = interpExpr varEnv procEnv lhs
-  r = interpExpr varEnv procEnv rhs
-interpExpr varEnv procEnv (Ast.Un op rhs) = unOpTrans op r
- where
-  r = interpExpr varEnv procEnv rhs
+interpExpr :: VarEnv -> ProcEnv -> Ast.Expr -> IO Value
+interpExpr varEnv procEnv (Ast.Bin op lhs rhs) = do
+  l <- interpExpr varEnv procEnv lhs
+  r <- interpExpr varEnv procEnv rhs
+  return (binOpTrans op l r)
+interpExpr varEnv procEnv (Ast.Un op rhs) = do
+  r <- interpExpr varEnv procEnv rhs
+  return (unOpTrans op r)
 interpExpr varEnv procEnv (Ast.Call name args) =
-  case Map.lookup name procEnv of
-    Nothing -> error ("undefined procedure: " ++ name)
-    Just proc -> interpProc Map.empty procEnv proc (map (interpExpr varEnv procEnv) args)
-interpExpr _ _ (Ast.Num val) = Num (read val)
-interpExpr varEnv _ (Ast.Var name) =
-  -- TODO: make sure variable isnt a proc
-  case Map.lookup name varEnv of
-    Nothing -> error ("undefined variable: " ++ name ++ " map=" ++ show varEnv)
-    Just val -> val
+  case Map.lookup name builtins of
+    Just bProc ->
+      mapM (interpExpr varEnv procEnv) args >>= \interpArgs -> bProc interpArgs
+    Nothing ->
+      case Map.lookup name procEnv of
+        Nothing -> error ("undefined procedure: " ++ name)
+        Just proc ->
+          mapM (interpExpr varEnv procEnv) args >>= \interpArgs ->
+            interpProc Map.empty procEnv proc interpArgs
+interpExpr _ _ (Ast.Num val) = return (Num (read val))
+interpExpr varEnv procEnv (Ast.Var name) =
+  if isBuiltin name || Map.member name procEnv
+    then error (name ++ " is a builtin or procedure")
+    else case Map.lookup name varEnv of
+      Nothing -> error ("undefined variable: " ++ name ++ " map=" ++ show varEnv)
+      Just val -> return val
 
-interpBody :: VarEnv -> ProcEnv -> Ast.Body -> Value
-interpBody _ _ [] = Void
+interpBody :: VarEnv -> ProcEnv -> Ast.Body -> IO Value
+interpBody _ _ [] = return Void
 interpBody varEnv procEnv (stmt : stmts) =
   case stmt of
     (Ast.Set name expr) ->
-      let val = interpExpr varEnv procEnv expr
-          newVarEnv = Map.insert name val varEnv
-       in interpBody newVarEnv procEnv stmts
-    (Ast.Eval _) -> interpBody varEnv procEnv stmts -- TODO: support side effects
-    (Ast.Return Nothing) -> Void
+      interpExpr varEnv procEnv expr >>= \val ->
+        let newVarEnv = Map.insert name val varEnv
+         in interpBody newVarEnv procEnv stmts
+    (Ast.Eval expr) -> interpExpr varEnv procEnv expr >> interpBody varEnv procEnv stmts
+    (Ast.Return Nothing) -> return Void
     (Ast.Return (Just expr)) -> interpExpr varEnv procEnv expr
 
-interpProc :: VarEnv -> ProcEnv -> Ast.Procedure -> [Value] -> Value
-interpProc varEnv procEnv (Ast.Proc _ params body) args =
+interpProc :: VarEnv -> ProcEnv -> Ast.Procedure -> [Value] -> IO Value
+interpProc varEnv procEnv (Ast.Proc params body) args =
   -- NOTE: varEnv *should* be empty, but keep just in case
   if length params /= length args
     then error "wrong number of arguments"
@@ -73,10 +91,10 @@ interpProc varEnv procEnv (Ast.Proc _ params body) args =
       let newVarEnv = Map.union (Map.fromList (zip params args)) varEnv
        in interpBody newVarEnv procEnv body
 
-interpProg :: Ast.Program -> Value
+interpProg :: Ast.Program -> IO Value
 interpProg (Ast.Prog procedures) =
   let varEnv = Map.empty
-      procEnv = Map.fromList (map (\p@(Ast.Proc name _ _) -> (name, p)) procedures)
+      procEnv = Map.fromList procedures
       mainProc = Map.lookup "main" procEnv
    in case mainProc of
         Nothing -> error "no main procedure found"

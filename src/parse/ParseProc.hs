@@ -4,9 +4,9 @@ import qualified Ast
 import qualified ParseStmt
 import qualified Tokens
 
-parseProc :: [Tokens.Token] -> (Ast.Procedure, [Tokens.Token])
+parseProc :: [Tokens.Token] -> ((Ast.Identifier, Ast.Procedure), [Tokens.Token])
 parseProc (Tokens.Proc : Tokens.Ident name : tks) =
-  (Ast.Proc name args stmts, tks3)
+  ((name, Ast.Proc args stmts), tks3)
  where
   (args, tks2) = parseProcArgs tks
   (stmts, tks3) = parseProcBody tks2

@@ -3,7 +3,7 @@ module Main where
 import Ast (Program)
 import Lexer
 import ParseProg
-import TreeWalk (Value, interpProg)
+import TreeWalk (interpProg)
 
 code :: String
 code =
@@ -16,14 +16,14 @@ code =
   \\
   \proc main() { \
   \ j = doNothing(1, 2); \
+  \ disp(1); \
   \ return j; \
   \}"
 
 prog :: Program
 prog = parseProg (tokenize code)
 
-val :: Value
-val = interpProg prog
-
 main :: IO ()
-main = print val
+main = do
+  returnValue <- interpProg prog
+  print returnValue

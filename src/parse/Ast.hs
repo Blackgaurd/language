@@ -29,9 +29,9 @@ data Stmt
 
 type Body = [Stmt]
 
-data Procedure = Proc Identifier [Identifier] Body deriving (Show, Eq)
+data Procedure = Proc [Identifier] Body deriving (Show, Eq)
 
-newtype Program = Prog [Procedure] deriving (Show)
+newtype Program = Prog [(Identifier, Procedure)] deriving (Show)
 
 {- ----- PRINTING ----- -}
 binOpToString :: BinOp -> String
@@ -60,6 +60,6 @@ stmtToString (Eval expr) = exprToString expr ++ ";"
 stmtToString (Return (Just expr)) = "return " ++ exprToString expr ++ ";"
 stmtToString (Return Nothing) = "return;"
 
-procToString :: Procedure -> String
-procToString (Proc name args body) =
+procToString :: Identifier -> Procedure -> String
+procToString name (Proc args body) =
   "proc " ++ name ++ "(" ++ intercalate "," args ++ "){" ++ intercalate "" (map stmtToString body) ++ "}"

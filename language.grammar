@@ -1,10 +1,16 @@
 # work in progress...
-# too lazy to specify placement of whitespace,
-# so they are left as an exercise to the reader
+# RULES:
+# {<rule>}* : 0 or more of <rule>, optionally space separated
+# {<rule>}+ : 1 or more of <rule>, optionally space separated
+# {<rule>}? : 0 or 1 of <rule>
+# any rule or string that is separated by a space means they may be
+#   0 or more spaces in between them
+# any rule or string that is not separated by a space means they
+#   must not have spaces in between them
 
 <program> = {<procedure>}+
 
-<procedure> = proc <identifier> ( <identifier-list> ) { {<statement>}* }
+<procedure> = proc <space> <identifier> ( <identifier-list> ) { {<statement>}* }
 
 <statement> = <identifier> = <expression> ;
             | <expression> ;
@@ -16,25 +22,15 @@
              | <identifier> ( <expression-list> )
              | <identifier>
              | <number>
+             | <boolean>
 
 <expression-list> = <expression>
                   | <expression-list> , <expression>
 
-<identifier> = <alpha>
-             | <identifier><alpha>
+<identifier> = # string of <digit> | <alpha> | ! | ?, but not all <digit>
 
-<identifier-list> = <identifier>
-                  | <identifier-list> , <identifier>
+<number> = # string of <digit>
 
-<number> = <digit>
-         | <number><digit>
+<boolean> = !t | !f
 
-<alpha> = <alpha-lower>
-        | <alpha-upper>
-
-<alpha-lower> = a | b | c | d | e | f | g | h | i | j | k | l | m | n | o | p | q | r | s | t | u | v | w | z | y | z
-
-
-<alpha-upper> = A | B | C | D | E | F | G | H | I | J | K | L | M | N | O | P | Q | R | S | T | U | V | W | Z | Y | Z
-
-<digit> = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+<space> = # space (ascii 10), not to be confused with whitespace

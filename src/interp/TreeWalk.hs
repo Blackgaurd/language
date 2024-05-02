@@ -3,9 +3,12 @@ module TreeWalk where
 import qualified Ast
 import qualified Data.Map as Map
 import GHC.Integer (divInteger)
+import qualified Lexer
+import qualified ParseProg
+import qualified Utils
 
 {- INTERPRETER TYPES -}
-data Value = Num Integer | Void deriving (Show)
+data Value = Num Integer | Boolean Bool | Void deriving (Show)
 type VarEnv = Map.Map Ast.Identifier Value
 type ProcEnv = Map.Map Ast.Identifier Ast.Procedure
 type Builtin = [Value] -> IO Value
@@ -20,28 +23,38 @@ isBuiltin name = Map.member name builtins
 dispValue :: [Value] -> IO Value
 dispValue [] = putStrLn "" >> return Void
 dispValue [Num x] = print x >> return Void
+dispValue [Boolean b] = putStrLn (if b then "!t" else "!f") >> return Void
 dispValue [Void] = putStrLn "<void>" >> return Void
 dispValue _ = error "disp only takes one argument"
 
 {- TREE WALKING INTERPRETER -}
-valueBinOp :: (Integer -> Integer -> Integer) -> Value -> Value -> Value
-valueBinOp op (Num a) (Num b) = Num (op a b)
-valueBinOp _ Void _ = error "binary operator not supported for void"
-valueBinOp _ _ Void = error "binary operator not supported for void"
+numBinOp :: (Integer -> Integer -> Integer) -> Value -> Value -> Value
+numBinOp op (Num a) (Num b) = Num (op a b)
+numBinOp _ l r = error ("arithmetic infix operator not supported for lhs=" ++ show l ++ ", rhs=" ++ show r)
+
+boolBinOp :: (Integer -> Integer -> Bool) -> Value -> Value -> Value
+boolBinOp op (Num a) (Num b) = Boolean (op a b)
+boolBinOp _ l r = error ("arithmetic infix operator not supported for lhs=" ++ show l ++ ", rhs=" ++ show r)
 
 binOpTrans :: Ast.BinOp -> (Value -> Value -> Value)
-binOpTrans Ast.Add = valueBinOp (+)
-binOpTrans Ast.Sub = valueBinOp (-)
-binOpTrans Ast.Mult = valueBinOp (*)
-binOpTrans Ast.Div = valueBinOp divInteger
+binOpTrans Ast.Add = numBinOp (+)
+binOpTrans Ast.Sub = numBinOp (-)
+binOpTrans Ast.Mult = numBinOp (*)
+binOpTrans Ast.Div = numBinOp divInteger
+binOpTrans Ast.Lt = boolBinOp (<=)
+binOpTrans Ast.Gt = boolBinOp (>=)
+binOpTrans Ast.Le = boolBinOp (<)
+binOpTrans Ast.Ge = boolBinOp (>)
+binOpTrans Ast.Ee = boolBinOp (==)
+binOpTrans Ast.Ne = boolBinOp (/=)
 
-valueUnOp :: (Integer -> Integer) -> Value -> Value
-valueUnOp op (Num a) = Num (op a)
-valueUnOp _ Void = error "unary operator not supported for void"
+numUnOp :: (Integer -> Integer) -> Value -> Value
+numUnOp op (Num a) = Num (op a)
+numUnOp _ r = error ("arithmetic prefix operator not supported for rhs=" ++ show r)
 
 unOpTrans :: Ast.UnOp -> (Value -> Value)
-unOpTrans Ast.Pos = valueUnOp id
-unOpTrans Ast.Neg = valueUnOp negate
+unOpTrans Ast.Pos = numUnOp id
+unOpTrans Ast.Neg = numUnOp negate
 
 interpExpr :: VarEnv -> ProcEnv -> Ast.Expr -> IO Value
 interpExpr varEnv procEnv (Ast.Bin op lhs rhs) = do
@@ -62,6 +75,7 @@ interpExpr varEnv procEnv (Ast.Call name args) =
           mapM (interpExpr varEnv procEnv) args >>= \interpArgs ->
             interpProc Map.empty procEnv proc interpArgs
 interpExpr _ _ (Ast.Num val) = return (Num (read val))
+interpExpr _ _ (Ast.Boolean val) = return (Boolean val)
 interpExpr varEnv procEnv (Ast.Var name) =
   if isBuiltin name || Map.member name procEnv
     then error (name ++ " is a builtin or procedure")
@@ -93,9 +107,19 @@ interpProc varEnv procEnv (Ast.Proc params body) args =
 
 interpProg :: Ast.Program -> IO Value
 interpProg (Ast.Prog procedures) =
-  let varEnv = Map.empty
-      procEnv = Map.fromList procedures
-      mainProc = Map.lookup "main" procEnv
-   in case mainProc of
-        Nothing -> error "no main procedure found"
-        Just mP -> interpProc varEnv procEnv mP []
+  if Utils.hasDuplicates (map fst procedures)
+    then
+      error "duplicate procedure names"
+    else
+      let varEnv = Map.empty
+          procEnv = Map.fromList procedures
+          mainProc = Map.lookup "main" procEnv
+       in case mainProc of
+            Nothing -> error "no main procedure found"
+            Just mP -> interpProc varEnv procEnv mP []
+
+interpString :: String -> IO Value
+interpString source =
+  let toks = Lexer.tokenize source
+      progAst = ParseProg.parseProg toks
+   in interpProg progAst

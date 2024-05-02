@@ -1,29 +1,44 @@
 module Main where
 
-import Ast (Program)
-import Lexer
-import ParseProg
-import TreeWalk (interpProg)
+import Data.List (isPrefixOf)
+import qualified Data.Map as Map
+import RunFile (interpFile)
+import System.Environment (getArgs)
 
-code :: String
-code =
-  "proc doNothing(x, y) {\
-  \ x = x + 1; \
-  \ y = y + 1; \
-  \ z = x + y; \
-  \ return z + z + z * 4; \
-  \} \
-  \\
-  \proc main() { \
-  \ j = doNothing(1, 2); \
-  \ disp(1); \
-  \ return j; \
-  \}"
+{- ARGUMENT PARSING -}
+printUsage :: String -> IO ()
+printUsage progName = putStrLn ("usage: " ++ progName ++ " <input file>")
 
-prog :: Program
-prog = parseProg (tokenize code)
+splitOne :: Char -> String -> (String, String)
+splitOne ch str =
+  let helper :: String -> String -> (String, String)
+      helper (x : xs) acc = if x == ch then (reverse acc, xs) else helper xs (x : acc)
+      helper [] acc = (reverse acc, [])
+   in helper str []
+
+data CliOption = T | S String deriving (Show)
+
+parseArgs :: [String] -> Map.Map String CliOption
+parseArgs args = helper args []
+ where
+  helper :: [String] -> [(String, CliOption)] -> Map.Map String CliOption
+  helper [] acc = Map.fromList acc
+  helper (x : xs) acc = helper xs ((opt, arg) : acc)
+   where
+    (l, r) = splitOne '=' x
+    opt = if "--" `isPrefixOf` l then l else "filename"
+    arg
+      | "--" `isPrefixOf` l =
+          if null r
+            then T
+            else S r
+      | null r = S l
+      | otherwise = error "option must start with --"
 
 main :: IO ()
 main = do
-  returnValue <- interpProg prog
-  print returnValue
+  args <- getArgs
+  case Map.lookup "filename" (parseArgs args) of
+    Nothing -> putStrLn "no input file"
+    Just T -> putStrLn "something went wrong in parse"
+    Just (S filename) -> interpFile filename

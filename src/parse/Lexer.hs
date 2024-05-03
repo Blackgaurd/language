@@ -38,6 +38,8 @@ matchChar (ch : chs) =
     '}' -> (RBrace, chs)
     ';' -> (Semicolon, chs)
     ',' -> (Comma, chs)
+    '&' -> (LAnd, chs)
+    '|' -> (LOr, chs)
     '=' -> case Utils.safeHead chs of
       Nothing -> (Equal, chs)
       Just '=' -> (Ee, tail chs)
@@ -53,7 +55,7 @@ matchChar (ch : chs) =
     '~' -> case Utils.safeHead chs of
       Nothing -> error "expected character after ~"
       Just '=' -> (Ne, tail chs)
-      Just _ -> error "unrecognized character after ~"
+      Just _ -> (LNot, chs)
     _ -> error ("unrecognized character: " ++ [ch])
 
 -- tokenizeH :: input -> acc -> Tokens

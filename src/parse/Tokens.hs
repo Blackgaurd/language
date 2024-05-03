@@ -14,6 +14,9 @@ data Token
   | Ge -- greater than or equal to
   | Ee -- double equal
   | Ne -- not equal
+  | LNot -- logical not
+  | LOr -- logical or
+  | LAnd -- logical and
   | Equal
   | LBracket
   | RBracket

@@ -13,9 +13,18 @@ type VarEnv = Map.Map Ast.Identifier Value
 type ProcEnv = Map.Map Ast.Identifier Ast.Procedure
 type Builtin = [Value] -> IO Value
 
+instance Eq Value where
+  (Num a) == (Num b) = a == b
+  (Boolean a) == (Boolean b) = a == b
+  a == b = error ("== not defined for " ++ show a ++ " and " ++ show b)
+
+instance Ord Value where
+  compare (Num a) (Num b) = compare a b
+  compare a b = error ("ordering not defiend for " ++ show a ++ " and " ++ show b)
+
 {- BUILTINS -}
 builtins :: Map.Map Ast.Identifier Builtin
-builtins = Map.fromList [("disp", dispValue)]
+builtins = Map.fromList [("!disp", dispValue)]
 
 isBuiltin :: Ast.Identifier -> Bool
 isBuiltin name = Map.member name builtins
@@ -32,29 +41,36 @@ numBinOp :: (Integer -> Integer -> Integer) -> Value -> Value -> Value
 numBinOp op (Num a) (Num b) = Num (op a b)
 numBinOp _ l r = error ("arithmetic infix operator not supported for lhs=" ++ show l ++ ", rhs=" ++ show r)
 
-boolBinOp :: (Integer -> Integer -> Bool) -> Value -> Value -> Value
-boolBinOp op (Num a) (Num b) = Boolean (op a b)
-boolBinOp _ l r = error ("arithmetic infix operator not supported for lhs=" ++ show l ++ ", rhs=" ++ show r)
+logicalBinOp :: (Bool -> Bool -> Bool) -> Value -> Value -> Value
+logicalBinOp op (Boolean a) (Boolean b) = Boolean (op a b)
+logicalBinOp _ l r = error ("logical infix operator not supported for lhs=" ++ show l ++ ", rhs=" ++ show r)
 
 binOpTrans :: Ast.BinOp -> (Value -> Value -> Value)
 binOpTrans Ast.Add = numBinOp (+)
 binOpTrans Ast.Sub = numBinOp (-)
 binOpTrans Ast.Mult = numBinOp (*)
 binOpTrans Ast.Div = numBinOp divInteger
-binOpTrans Ast.Lt = boolBinOp (<=)
-binOpTrans Ast.Gt = boolBinOp (>=)
-binOpTrans Ast.Le = boolBinOp (<)
-binOpTrans Ast.Ge = boolBinOp (>)
-binOpTrans Ast.Ee = boolBinOp (==)
-binOpTrans Ast.Ne = boolBinOp (/=)
+binOpTrans Ast.Lt = \a b -> Boolean ((<=) a b)
+binOpTrans Ast.Gt = \a b -> Boolean ((>=) a b)
+binOpTrans Ast.Le = \a b -> Boolean ((<) a b)
+binOpTrans Ast.Ge = \a b -> Boolean ((>) a b)
+binOpTrans Ast.Ee = \a b -> Boolean ((==) a b)
+binOpTrans Ast.Ne = \a b -> Boolean ((/=) a b)
+binOpTrans Ast.LAnd = logicalBinOp (&&)
+binOpTrans Ast.LOr = logicalBinOp (||)
 
 numUnOp :: (Integer -> Integer) -> Value -> Value
 numUnOp op (Num a) = Num (op a)
 numUnOp _ r = error ("arithmetic prefix operator not supported for rhs=" ++ show r)
 
+logicalUnOp :: (Bool -> Bool) -> Value -> Value
+logicalUnOp op (Boolean a) = Boolean (op a)
+logicalUnOp _ r = error ("logical prefix operator not supported for rhs=" ++ show r)
+
 unOpTrans :: Ast.UnOp -> (Value -> Value)
 unOpTrans Ast.Pos = numUnOp id
 unOpTrans Ast.Neg = numUnOp negate
+unOpTrans Ast.LNot = logicalUnOp not
 
 interpExpr :: VarEnv -> ProcEnv -> Ast.Expr -> IO Value
 interpExpr varEnv procEnv (Ast.Bin op lhs rhs) = do

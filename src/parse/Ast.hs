@@ -2,7 +2,7 @@ module Ast where
 
 import Data.List (intercalate)
 
-data UnOp = Pos | Neg deriving (Show, Eq)
+data UnOp = Pos | Neg | LNot deriving (Show, Eq)
 
 data BinOp
   = Add
@@ -15,6 +15,8 @@ data BinOp
   | Ge -- greater than or equal to
   | Ee -- double equal
   | Ne -- not equal
+  | LOr -- logical or
+  | LAnd -- logical and
   deriving (Show, Eq)
 
 type Identifier = String
@@ -52,10 +54,13 @@ binOpToString Le = "<="
 binOpToString Ge = ">="
 binOpToString Ee = "=="
 binOpToString Ne = "~="
+binOpToString LOr = "|"
+binOpToString LAnd = "&"
 
 unOpToString :: UnOp -> String
 unOpToString Pos = "+"
 unOpToString Neg = "-"
+unOpToString LNot = "~"
 
 exprToString :: Expr -> String
 exprToString (Bin op lhs rhs) =

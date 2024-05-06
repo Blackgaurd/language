@@ -1,4 +1,4 @@
-module Utils where
+module LangUtils where
 
 import qualified Data.Set as Set
 

@@ -98,6 +98,7 @@ parseInfix lhs tokens@(Tokens.Semicolon : _) _ = (lhs, tokens)
 parseInfix lhs tokens@(Tokens.Comma : _) _ = (lhs, tokens) -- TODO: only allow this when parsing expression list
 parseInfix lhs tokens@(Tokens.Equal : _) _ = (lhs, tokens) -- TODO: should be error, implement later
 parseInfix lhs tokens@(Tokens.RBracket : _) _ = (lhs, tokens)
+parseInfix lhs tokens@(Tokens.Then : _) _ = (lhs, tokens)
 parseInfix lhs tokens@(tk : tks) minPrec
   | minPrec < lPrec =
       let (rhs, tks') = parseExprPrec tks rPrec

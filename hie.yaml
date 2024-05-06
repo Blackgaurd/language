@@ -1,0 +1,118 @@
+cradle:
+  cabal:
+    - path: "src/Main.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/Main.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/Main.hs"
+      component: "language:exe:language"
+
+    - path: "src/LangUtils.hs"
+      component: "language:exe:language"
+
+    - path: "src/Tokens.hs"
+      component: "language:exe:language"
+
+    - path: "src/Ast.hs"
+      component: "language:exe:language"
+
+    - path: "src/Lexer.hs"
+      component: "language:exe:language"
+
+    - path: "src/ParseExpr.hs"
+      component: "language:exe:language"
+
+    - path: "src/ParseStmt.hs"
+      component: "language:exe:language"
+
+    - path: "src/ParseProc.hs"
+      component: "language:exe:language"
+
+    - path: "src/ParseProg.hs"
+      component: "language:exe:language"
+
+    - path: "src/TreeWalk.hs"
+      component: "language:exe:language"
+
+    - path: "src/RunFile.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/LangUtils.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/Tokens.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/Ast.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/Lexer.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/ParseExpr.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/ParseStmt.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/ParseProc.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/ParseProg.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/TreeWalk.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/RunFile.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/LangUtils.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/Tokens.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/Ast.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/Lexer.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/ParseExpr.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/ParseStmt.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/ParseProc.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/ParseProg.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/TreeWalk.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/RunFile.hs"
+      component: "language:exe:language"
+
+    - path: "src"
+      component: "language:test:test-lexer"
+
+    - path: "src/parse"
+      component: "language:test:test-lexer"
+
+    - path: "tests"
+      component: "language:test:test-lexer"
+
+    - path: "src"
+      component: "language:test:test-parsers"
+
+    - path: "src/parse"
+      component: "language:test:test-parsers"
+
+    - path: "tests"
+      component: "language:test:test-parsers"

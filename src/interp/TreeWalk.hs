@@ -3,9 +3,9 @@ module TreeWalk where
 import qualified Ast
 import qualified Data.Map as Map
 import GHC.Integer (divInteger)
+import qualified LangUtils
 import qualified Lexer
 import qualified ParseProg
-import qualified Utils
 
 {- INTERPRETER TYPES -}
 data Value = Num Integer | Boolean Bool | Void deriving (Show)
@@ -28,6 +28,10 @@ builtins = Map.fromList [("!disp", dispValue)]
 
 isBuiltin :: Ast.Identifier -> Bool
 isBuiltin name = Map.member name builtins
+
+isTruthy :: Value -> Bool
+isTruthy (Boolean b) = b
+isTruthy x = error ("expected boolean value, got=" ++ show x)
 
 dispValue :: [Value] -> IO Value
 dispValue [] = putStrLn "" >> return Void
@@ -99,17 +103,23 @@ interpExpr varEnv procEnv (Ast.Var name) =
       Nothing -> error ("undefined variable: " ++ name ++ " map=" ++ show varEnv)
       Just val -> return val
 
-interpBody :: VarEnv -> ProcEnv -> Ast.Body -> IO Value
-interpBody _ _ [] = return Void
-interpBody varEnv procEnv (stmt : stmts) =
-  case stmt of
-    (Ast.Set name expr) ->
-      interpExpr varEnv procEnv expr >>= \val ->
-        let newVarEnv = Map.insert name val varEnv
-         in interpBody newVarEnv procEnv stmts
-    (Ast.Eval expr) -> interpExpr varEnv procEnv expr >> interpBody varEnv procEnv stmts
-    (Ast.Return Nothing) -> return Void
-    (Ast.Return (Just expr)) -> interpExpr varEnv procEnv expr
+-- bool in return value is returned?
+interpBlock :: VarEnv -> ProcEnv -> [Ast.Stmt] -> IO (Bool, Value)
+interpBlock _ _ [] = return (False, Void)
+interpBlock varEnv procEnv (stmt : stmts) =
+  let interpExprEnv = interpExpr varEnv procEnv
+      interpBlockEnv = interpBlock varEnv procEnv
+   in case stmt of
+        (Ast.Set name expr) ->
+          interpExprEnv expr >>= \val ->
+            let newVarEnv = Map.insert name val varEnv
+             in interpBlock newVarEnv procEnv stmts
+        (Ast.Eval expr) -> interpExprEnv expr >> interpBlockEnv stmts
+        (Ast.Return Nothing) -> return (True, Void)
+        (Ast.Return (Just expr)) -> interpExprEnv expr >>= \retVal -> return (True, retVal)
+        (Ast.BlockStmt innerStmts) -> interpBlockEnv innerStmts >>= \(returned, retVal) -> if returned then return (True, retVal) else interpBlockEnv stmts
+        (Ast.When expr tStmts) -> interpExprEnv expr >>= \check -> if isTruthy check then interpBlockEnv (Ast.BlockStmt tStmts : stmts) else interpBlockEnv stmts
+        (Ast.WhenOtherwise expr tStmts fStmts) -> interpExprEnv expr >>= \check -> if isTruthy check then interpBlockEnv (Ast.BlockStmt tStmts : stmts) else interpBlockEnv (Ast.BlockStmt fStmts : stmts)
 
 interpProc :: VarEnv -> ProcEnv -> Ast.Procedure -> [Value] -> IO Value
 interpProc varEnv procEnv (Ast.Proc params body) args =
@@ -119,11 +129,11 @@ interpProc varEnv procEnv (Ast.Proc params body) args =
     else
       -- Map.union prefers elements from the first list
       let newVarEnv = Map.union (Map.fromList (zip params args)) varEnv
-       in interpBody newVarEnv procEnv body
+       in interpBlock newVarEnv procEnv body >>= \(_, val) -> return val
 
 interpProg :: Ast.Program -> IO Value
 interpProg (Ast.Prog procedures) =
-  if Utils.hasDuplicates (map fst procedures)
+  if LangUtils.hasDuplicates (map fst procedures)
     then
       error "duplicate procedure names"
     else

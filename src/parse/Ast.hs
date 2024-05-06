@@ -34,11 +34,14 @@ data Stmt
   = Set Identifier Expr
   | Eval Expr
   | Return (Maybe Expr)
+  | BlockStmt Block
+  | When Expr Block
+  | WhenOtherwise Expr Block Block
   deriving (Show, Eq)
 
-type Body = [Stmt]
+type Block = [Stmt]
 
-data Procedure = Proc [Identifier] Body deriving (Show, Eq)
+data Procedure = Proc [Identifier] Block deriving (Show, Eq)
 
 newtype Program = Prog [(Identifier, Procedure)] deriving (Show)
 
@@ -78,6 +81,12 @@ stmtToString (Set var value) = var ++ "=" ++ exprToString value ++ ";"
 stmtToString (Eval expr) = exprToString expr ++ ";"
 stmtToString (Return (Just expr)) = "return " ++ exprToString expr ++ ";"
 stmtToString (Return Nothing) = "return;"
+stmtToString (BlockStmt stmts) = "{" ++ intercalate "" (map stmtToString stmts) ++ "}"
+stmtToString (When expr stmts) = "when(" ++ exprToString expr ++ ")then{" ++ intercalate "" (map stmtToString stmts) ++ "}"
+stmtToString (WhenOtherwise expr tStmts fStmts) =
+  let tString = intercalate "" (map stmtToString tStmts)
+      fString = intercalate "" (map stmtToString fStmts)
+   in "when(" ++ exprToString expr ++ ")then{" ++ tString ++ "}otherwise{" ++ fString ++ "}"
 
 procToString :: (Identifier, Procedure) -> String
 procToString (name, Proc args body) =

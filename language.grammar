@@ -10,11 +10,17 @@
 
 <program> = {<procedure>}+
 
-<procedure> = proc <space> <identifier> ( <identifier-list> ) { {<statement>}* }
+<procedure> = proc <space> <identifier> ( <identifier-list> ) <block>
 
 <statement> = <identifier> = <expression> ;
             | <expression> ;
             | return {<expression>}? ;
+            | <block>
+            | when <expression> then <statement>
+            | when <expression> then <statement> otherwise <statement>
+            # TODO: unless statement
+
+<block> = { {<statement>}* }
 
 <expression> = <prefix-op> <expression>
              | <expression> <infix-op> <expression>

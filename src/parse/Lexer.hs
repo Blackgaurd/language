@@ -2,8 +2,8 @@ module Lexer where
 
 import Data.Char (isAlpha, isDigit)
 import GHC.Unicode (isSpace)
+import qualified LangUtils
 import Tokens
-import qualified Utils
 
 isIdentifierChar :: Char -> Bool
 isIdentifierChar ch = isAlpha ch || ch == '_' || isDigit ch || ch == '!' || ch == '?'
@@ -22,6 +22,9 @@ matchKeyword "proc" = Proc
 matchKeyword "return" = Return
 matchKeyword "!t" = Boolean True
 matchKeyword "!f" = Boolean False
+matchKeyword "when" = When
+matchKeyword "then" = Then
+matchKeyword "otherwise" = Otherwise
 matchKeyword str = Ident str
 
 matchChar :: String -> (Token, String)
@@ -40,19 +43,19 @@ matchChar (ch : chs) =
     ',' -> (Comma, chs)
     '&' -> (LAnd, chs)
     '|' -> (LOr, chs)
-    '=' -> case Utils.safeHead chs of
+    '=' -> case LangUtils.safeHead chs of
       Nothing -> (Equal, chs)
       Just '=' -> (Ee, tail chs)
       Just _ -> (Equal, chs)
-    '>' -> case Utils.safeHead chs of
+    '>' -> case LangUtils.safeHead chs of
       Nothing -> (Gt, chs)
       Just '=' -> (Ge, tail chs)
       Just _ -> (Gt, chs)
-    '<' -> case Utils.safeHead chs of
+    '<' -> case LangUtils.safeHead chs of
       Nothing -> (Lt, chs)
       Just '=' -> (Le, tail chs)
       Just _ -> (Lt, chs)
-    '~' -> case Utils.safeHead chs of
+    '~' -> case LangUtils.safeHead chs of
       Nothing -> error "expected character after ~"
       Just '=' -> (Ne, tail chs)
       Just _ -> (LNot, chs)

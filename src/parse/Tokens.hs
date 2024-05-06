@@ -26,5 +26,8 @@ data Token
   | Semicolon
   | Proc
   | Return
+  | When
+  | Then
+  | Otherwise
   | Eof
   deriving (Show, Eq)

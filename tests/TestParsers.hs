@@ -41,12 +41,18 @@ parseStmtTests =
   , ("1 - 2 - 3 + a(4);", "(((1-2)-3)+a(4));")
   , ("return;", "return;")
   , ("return a(b)+b(5);", "return (a(b)+b(5));")
+  , ("{a=1;b=2;}", "{a=1;b=2;}")
+  , ("{ooo=17;return ooo; return;}", "{ooo=17;return ooo;return;}")
+  , ("when 1 == 1 then x = 4;", "when((1==1))then{x=4;}")
+  , ("when 1 + 2 * 3 then {x = x + 1;} otherwise x = x- 1;", "when((1+(2*3)))then{x=(x+1);}otherwise{x=(x-1);}")
+  , ("when x == 1 then {a();} otherwise when x == 2 then b();", "when((x==1))then{a();}otherwise{when((x==2))then{b();}}")
   ]
 
 parseProcTests =
   [ ("proc a(x, y, z) {return x + y - z;}", "proc a(x,y,z){return ((x+y)-z);}")
   , ("proc sum(a, b) {ret = a + b; return ret; }", "proc sum(a,b){ret=(a+b);return ret;}")
   , ("proc doNothing (b, b) {return; doNothing(5, 5); doNothing(7, 7 + 1);}", "proc doNothing(b,b){return;doNothing(5,5);doNothing(7,(7+1));}")
+  , ("proc 8funnyname_123!???() {return 9;{return 99; return 999;}}", "proc 8funnyname_123!???(){return 9;{return 99;return 999;}}")
   ]
 
 toTest testFunction x =

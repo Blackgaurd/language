@@ -20,6 +20,7 @@ tokenizeTests =
   , ("   1234  ", [Number "1234", Eof])
   , ("AbFwdd adja", [Ident "AbFwdd", Ident "adja", Eof])
   , ("1 + 2 * four - +orange  / 9", [Number "1", Add, Number "2", Mult, Ident "four", Sub, Add, Ident "orange", Div, Number "9", Eof])
+  , ("when 1 + 2 == 3 then a = 1; otherwise {a = 2;}", [When, Number "1", Add, Number "2", Ee, Number "3", Then, Ident "a", Equal, Number "1", Semicolon, Otherwise, LBrace, Ident "a", Equal, Number "2", Semicolon, RBrace, Eof])
   , ("(((1)))", [LBracket, LBracket, LBracket, Number "1", RBracket, RBracket, RBracket, Eof])
   , ("(+1)-(+  2)", [LBracket, Add, Number "1", RBracket, Sub, LBracket, Add, Number "2", RBracket, Eof])
   , ("1 <= 2 < 3 > 4 >= 5 == 6 ~= 7 = 8", [Number "1", Le, Number "2", Lt, Number "3", Gt, Number "4", Ge, Number "5", Ee, Number "6", Ne, Number "7", Equal, Number "8", Eof])

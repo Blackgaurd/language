@@ -35,6 +35,7 @@ matchChar (ch : chs) =
     '-' -> (Sub, chs)
     '*' -> (Mult, chs)
     '/' -> (Div, chs)
+    '%' -> (Mod, chs)
     '(' -> (LParen, chs)
     ')' -> (RParen, chs)
     '{' -> (LBrace, chs)

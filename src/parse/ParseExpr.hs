@@ -68,6 +68,7 @@ toBinOp Tokens.Add = Ast.Add
 toBinOp Tokens.Sub = Ast.Sub
 toBinOp Tokens.Mult = Ast.Mult
 toBinOp Tokens.Div = Ast.Div
+toBinOp Tokens.Mod = Ast.Mod
 toBinOp Tokens.Lt = Ast.Lt
 toBinOp Tokens.Gt = Ast.Gt
 toBinOp Tokens.Le = Ast.Le
@@ -79,6 +80,7 @@ toBinOp Tokens.LOr = Ast.LOr
 toBinOp Tokens.At = Ast.At
 toBinOp tk = error ("expected binary operator, got: " ++ show tk)
 
+-- smaller number in front means left-associative
 binOpPrec :: Ast.BinOp -> (Int, Int)
 binOpPrec Ast.LAnd = (1, 2)
 binOpPrec Ast.LOr = (1, 2)
@@ -92,6 +94,7 @@ binOpPrec Ast.Add = (6, 7)
 binOpPrec Ast.Sub = (6, 7)
 binOpPrec Ast.Mult = (8, 9)
 binOpPrec Ast.Div = (8, 9)
+binOpPrec Ast.Mod = (8, 9)
 binOpPrec Ast.At = (10, 11)
 
 -- assume next char is infix operator

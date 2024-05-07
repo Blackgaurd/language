@@ -23,6 +23,7 @@ tokenizeTests =
   , ("AbFwdd adja", [Ident "AbFwdd", Ident "adja", Eof])
   , ("\"apples\" @ 14", [StringLit "apples", At, Number "14", Eof])
   , ("1 + 2 * four - +orange  / 9", [Number "1", Add, Number "2", Mult, Ident "four", Sub, Add, Ident "orange", Div, Number "9", Eof])
+  , ("7 % 14", [Number "7", Mod, Number "14", Eof])
   , ("when 1 + 2 == 3 then a = 1; otherwise {a = 2;}", [When, Number "1", Add, Number "2", Ee, Number "3", Then, Ident "a", Equal, Number "1", Semicolon, Otherwise, LBrace, Ident "a", Equal, Number "2", Semicolon, RBrace, Eof])
   , ("(((1)))", [LParen, LParen, LParen, Number "1", RParen, RParen, RParen, Eof])
   , ("(+1)-(+  2)", [LParen, Add, Number "1", RParen, Sub, LParen, Add, Number "2", RParen, Eof])

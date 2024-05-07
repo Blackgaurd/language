@@ -9,6 +9,7 @@ data Token
   | Sub
   | Mult
   | Div
+  | Mod
   | Lt -- less than
   | Gt -- greater than
   | Le -- less than or equal to

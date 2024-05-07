@@ -10,6 +10,7 @@ data BinOp
   | Sub
   | Mult
   | Div
+  | Mod
   | Lt -- less than
   | Gt -- greater than
   | Le -- less than or equal to
@@ -54,6 +55,7 @@ binOpToString Add = "+"
 binOpToString Sub = "-"
 binOpToString Mult = "*"
 binOpToString Div = "/"
+binOpToString Mod = "%"
 binOpToString Lt = "<"
 binOpToString Gt = ">"
 binOpToString Le = "<="

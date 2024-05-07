@@ -1,7 +1,7 @@
 module Value where
 
 import qualified Data.Array as Array
-import GHC.Integer (divInteger)
+import GHC.Integer (divInteger, modInteger)
 import qualified LangUtils
 
 data Value = Num Integer | Boolean Bool | StringLit (Array.Array Integer Char) | Void deriving (Show)
@@ -36,6 +36,10 @@ valueNot x = error ("~x not defined for x=" ++ show x)
 ($/) :: Value -> Value -> Value
 ($/) (Num a) (Num b) = Num (divInteger a b)
 ($/) l r = error ("- operator not supported for " ++ show l ++ ", " ++ show r)
+
+($%) :: Value -> Value -> Value
+($%) (Num a) (Num b) = Num (modInteger a b)
+($%) l r = error ("% operator not supported for " ++ show l ++ ", " ++ show r)
 
 -- comparisson operators
 ($<) :: Value -> Value -> Value

@@ -27,41 +27,52 @@ matchKeyword "then" = Then
 matchKeyword "otherwise" = Otherwise
 matchKeyword str = Ident str
 
-matchChar :: String -> (Token, String)
-matchChar [] = error "unexpected eof"
-matchChar (ch : chs) =
-  case ch of
-    '+' -> (Add, chs)
-    '-' -> (Sub, chs)
-    '*' -> (Mult, chs)
-    '/' -> (Div, chs)
-    '%' -> (Mod, chs)
-    '(' -> (LParen, chs)
-    ')' -> (RParen, chs)
-    '{' -> (LBrace, chs)
-    '}' -> (RBrace, chs)
-    '@' -> (At, chs)
-    ';' -> (Semicolon, chs)
-    ',' -> (Comma, chs)
-    '&' -> (LAnd, chs)
-    '|' -> (LOr, chs)
-    '=' -> case LangUtils.safeHead chs of
-      Nothing -> (Equal, chs)
-      Just '=' -> (Ee, tail chs)
-      Just _ -> (Equal, chs)
-    '>' -> case LangUtils.safeHead chs of
-      Nothing -> (Gt, chs)
-      Just '=' -> (Ge, tail chs)
-      Just _ -> (Gt, chs)
-    '<' -> case LangUtils.safeHead chs of
-      Nothing -> (Lt, chs)
-      Just '=' -> (Le, tail chs)
-      Just _ -> (Lt, chs)
-    '~' -> case LangUtils.safeHead chs of
-      Nothing -> error "expected character after ~"
-      Just '=' -> (Ne, tail chs)
-      Just _ -> (LNot, chs)
-    _ -> error ("unrecognized character: " ++ [ch])
+nextToken :: String -> (Token, String)
+nextToken [] = (Eof, [])
+nextToken str@(ch : chs)
+  | isSpace ch = nextToken chs
+  | isIdentifierChar ch =
+      let (word, rest) = readWord str
+          token = if all isDigit word then Number word else matchKeyword word
+       in (token, rest)
+  | otherwise = case ch of
+      '+' -> (Add, chs)
+      '-' -> (Sub, chs)
+      '*' -> (Mult, chs)
+      '/' -> (Div, chs)
+      '%' -> case LangUtils.safeHead chs of
+        Nothing -> (Mod, chs)
+        Just '%' ->
+          let rest = consumeUntil (\c -> c == '\n' || c == '\r') (tail chs)
+           in nextToken rest
+        Just _ -> (Mod, chs)
+      '(' -> (LParen, chs)
+      ')' -> (RParen, chs)
+      '{' -> (LBrace, chs)
+      '}' -> (RBrace, chs)
+      '@' -> (At, chs)
+      ';' -> (Semicolon, chs)
+      ',' -> (Comma, chs)
+      '&' -> (LAnd, chs)
+      '|' -> (LOr, chs)
+      '"' -> readStringLit str
+      '=' -> case LangUtils.safeHead chs of
+        Nothing -> (Equal, chs)
+        Just '=' -> (Ee, tail chs)
+        Just _ -> (Equal, chs)
+      '>' -> case LangUtils.safeHead chs of
+        Nothing -> (Gt, chs)
+        Just '=' -> (Ge, tail chs)
+        Just _ -> (Gt, chs)
+      '<' -> case LangUtils.safeHead chs of
+        Nothing -> (Lt, chs)
+        Just '=' -> (Le, tail chs)
+        Just _ -> (Lt, chs)
+      '~' -> case LangUtils.safeHead chs of
+        Nothing -> error "expected character after ~"
+        Just '=' -> (Ne, tail chs)
+        Just _ -> (LNot, chs)
+      _ -> error ("unrecognized character: " ++ [ch])
 
 readStringLit :: String -> (Token, String)
 readStringLit ('"' : chrs) = helper chrs []
@@ -87,17 +98,25 @@ matchEscapeCharacter ch =
     '"' -> '"'
     _ -> error ("unrecognized escape character: " ++ [ch])
 
+consumeUntil :: (Char -> Bool) -> String -> String
+consumeUntil _ [] = []
+consumeUntil check (ch : chs)
+  | check ch = chs
+  | otherwise = consumeUntil check chs
+
 -- tokenizeH :: input -> acc -> Tokens
 tokenizeH :: String -> [Token] -> [Token]
-tokenizeH [] acc = reverse (Eof : acc)
-tokenizeH str@(ch : chs) acc
+tokenizeH [] acc = reverse acc
+tokenizeH str acc = let (tok, rest) = nextToken str in tokenizeH rest (tok : acc)
+
+{- tokenizeH str@(ch : chs) acc =
   | isSpace ch = tokenizeH chs acc
   | isIdentifierChar ch =
       let (word, rest) = readWord str
           token = if all isDigit word then Number word else matchKeyword word
        in tokenizeH rest (token : acc)
   | ch == '"' = let (strlit, rest) = readStringLit str in tokenizeH rest (strlit : acc)
-  | otherwise = let (token, rest) = matchChar str in tokenizeH rest (token : acc)
+  | otherwise = let (token, rest) = matchChar str in tokenizeH rest (token : acc) -}
 
 -- tokenize :: input -> Tokens
 tokenize :: String -> [Token]

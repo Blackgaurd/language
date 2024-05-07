@@ -1,8 +1,9 @@
 module Main where
 
+import Cli (interpFile, minimizeFile)
 import Data.List (isPrefixOf)
 import qualified Data.Map as Map
-import RunFile (interpFile)
+import qualified Data.Maybe
 import System.Environment (getArgs)
 
 {- ARGUMENT PARSING -}
@@ -16,7 +17,7 @@ splitOne ch str =
       helper [] acc = (reverse acc, [])
    in helper str []
 
-data CliOption = T | S String deriving (Show)
+data CliOption = T | F | S String deriving (Show, Eq)
 
 parseArgs :: [String] -> Map.Map String CliOption
 parseArgs args = helper args []
@@ -35,10 +36,24 @@ parseArgs args = helper args []
       | null r = S l
       | otherwise = error "option must start with --"
 
+argDefined :: Map.Map String CliOption -> String -> CliOption
+argDefined args option =
+  Data.Maybe.fromMaybe F (Map.lookup option args)
+
 main :: IO ()
 main = do
   args <- getArgs
-  case Map.lookup "filename" (parseArgs args) of
-    Nothing -> putStrLn "no input file"
-    Just T -> putStrLn "something went wrong in parse"
-    Just (S filename) -> interpFile filename
+  let parsed = parseArgs args
+      filename = argDefined parsed "filename"
+   in case filename of
+        T -> putStrLn "something went wrong in parsing arguments"
+        F -> putStrLn "no input file provided"
+        S file ->
+          if argDefined parsed "--minimize" == T
+            then minimizeFile file >>= \out -> putStrLn out
+            else interpFile file
+
+{- case Map.lookup "filename" (parseArgs args) of
+  Nothing -> putStrLn "no input file"
+  Just T -> putStrLn "something went wrong in parse"
+  Just (S filename) -> interpFile filename -}

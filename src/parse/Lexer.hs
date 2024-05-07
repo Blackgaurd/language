@@ -68,9 +68,23 @@ readStringLit ('"' : chrs) = helper chrs []
   helper :: String -> String -> (Token, String)
   helper [] _ = error "unexpected eof when reading string"
   helper ('"' : rest) acc = (StringLit (reverse acc), rest)
+  helper ('\\' : rest) acc =
+    case LangUtils.safeHead rest of
+      Nothing -> error "unclosed escape character"
+      Just c ->
+        let escaped = matchEscapeCharacter c
+         in helper (tail rest) (escaped : acc)
   helper (ch : rest) acc = helper rest (ch : acc)
 readStringLit (x : _) = error ("expected quote to read string, got=" ++ [x])
 readStringLit [] = error "unexpected eof when reading string"
+
+matchEscapeCharacter :: Char -> Char
+matchEscapeCharacter ch =
+  case ch of
+    'n' -> '\n'
+    '\\' -> '\\'
+    '"' -> '"'
+    _ -> error ("unrecognized escape character: " ++ [ch])
 
 -- tokenizeH :: input -> acc -> Tokens
 tokenizeH :: String -> [Token] -> [Token]

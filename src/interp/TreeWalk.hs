@@ -89,7 +89,7 @@ interpExpr varEnv procEnv (Ast.Var name) =
   if isBuiltin name || Map.member name procEnv
     then error (name ++ " is a builtin or procedure")
     else case Map.lookup name varEnv of
-      Nothing -> error ("undefined variable: " ++ name ++ " map=" ++ show varEnv)
+      Nothing -> error ("undefined variable: " ++ name ++ ", varEnv=" ++ show varEnv)
       Just val -> return val
 
 -- bool in return value is returned?

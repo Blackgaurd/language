@@ -1,7 +1,7 @@
 module TreeWalk where
 
 import qualified Ast
-import qualified Data.Array as Array
+import qualified Builtins
 import qualified Data.Map as Map
 import qualified LangUtils
 import qualified Lexer
@@ -11,26 +11,10 @@ import Value
 {- INTERPRETER TYPES -}
 type VarEnv = Map.Map Ast.Identifier Value
 type ProcEnv = Map.Map Ast.Identifier Ast.Procedure
-type Builtin = [Value] -> IO Value
-
-{- BUILTINS -}
-builtins :: Map.Map Ast.Identifier Builtin
-builtins = Map.fromList [("!disp", dispValue)]
-
-isBuiltin :: Ast.Identifier -> Bool
-isBuiltin name = Map.member name builtins
 
 isTruthy :: Value -> Bool
 isTruthy (Boolean b) = b
 isTruthy x = error ("expected boolean value, got=" ++ show x)
-
-dispValue :: [Value] -> IO Value
-dispValue [] = putStrLn "" >> return Void
-dispValue [Num x] = print x >> return Void
-dispValue [Boolean b] = putStrLn (if b then "!t" else "!f") >> return Void
-dispValue [StringLit str] = putStrLn (Array.elems str) >> return Void
-dispValue [Void] = putStrLn "<void>" >> return Void
-dispValue _ = error "disp only takes one argument"
 
 {- TREE WALKING INTERPRETER -}
 -- boolean in return is whether or not to short ciruit,
@@ -74,7 +58,7 @@ interpExpr varEnv procEnv (Ast.Un op rhs) = do
   r <- interpExpr varEnv procEnv rhs
   return (unOpTrans op r)
 interpExpr varEnv procEnv (Ast.Call name args) =
-  case Map.lookup name builtins of
+  case Map.lookup name Builtins.builtins of
     Just bProc ->
       mapM (interpExpr varEnv procEnv) args >>= \interpArgs -> bProc interpArgs
     Nothing ->
@@ -87,7 +71,7 @@ interpExpr _ _ (Ast.Num val) = return (Num (read val))
 interpExpr _ _ (Ast.Boolean val) = return (Boolean val)
 interpExpr _ _ (Ast.StringLit str) = return (StringLit str)
 interpExpr varEnv procEnv (Ast.Var name) =
-  if isBuiltin name || Map.member name procEnv
+  if Builtins.isBuiltin name || Map.member name procEnv
     then error (name ++ " is a builtin or procedure")
     else case Map.lookup name varEnv of
       Nothing -> error ("undefined variable: " ++ name ++ ", varEnv=" ++ show varEnv)

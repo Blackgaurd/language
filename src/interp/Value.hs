@@ -6,6 +6,14 @@ import qualified LangUtils
 
 data Value = Num Integer | Boolean Bool | StringLit (Array.Array Integer Char) | Void deriving (Show)
 
+valueToString :: Value -> String
+valueToString val =
+  case val of
+    Num x -> show x
+    Boolean b -> if b then "!t" else "!f"
+    StringLit s -> Array.elems s
+    Void -> "<void>"
+
 -- prefix operators
 valueNeg :: Value -> Value
 valueNeg (Num a) = Num (-a)

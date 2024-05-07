@@ -24,6 +24,7 @@ data Token
   | LBrace
   | RBrace
   | Comma
+  | At
   | Semicolon
   | Proc
   | Return

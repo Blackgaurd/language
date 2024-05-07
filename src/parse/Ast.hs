@@ -18,6 +18,7 @@ data BinOp
   | Ne -- not equal
   | LOr -- logical or
   | LAnd -- logical and
+  | At
   deriving (Show, Eq)
 
 type Identifier = String
@@ -29,7 +30,7 @@ data Expr
   | Num String
   | Boolean Bool
   | Var Identifier
-  | StringLit (Array.Array Int Char)
+  | StringLit (Array.Array Integer Char)
   deriving (Show, Eq)
 
 data Stmt
@@ -61,6 +62,7 @@ binOpToString Ee = "=="
 binOpToString Ne = "~="
 binOpToString LOr = "|"
 binOpToString LAnd = "&"
+binOpToString At = "@"
 
 unOpToString :: UnOp -> String
 unOpToString Pos = "+"

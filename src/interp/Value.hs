@@ -4,7 +4,7 @@ import qualified Data.Array as Array
 import GHC.Integer (divInteger)
 import qualified LangUtils
 
-data Value = Num Integer | Boolean Bool | StringLit (Array.Array Int Char) | Void deriving (Show)
+data Value = Num Integer | Boolean Bool | StringLit (Array.Array Integer Char) | Void deriving (Show)
 
 -- prefix operators
 valueNeg :: Value -> Value
@@ -71,3 +71,14 @@ valueNot x = error ("~x not defined for x=" ++ show x)
 ($|) :: Value -> Value -> Value
 ($|) (Boolean a) (Boolean b) = Boolean (a || b)
 ($|) l r = error ("| operator not supported for " ++ show l ++ ", " ++ show r)
+
+-- at operator
+($@) :: Value -> Value -> Value
+($@) (StringLit str) (Num ind) =
+  if ind >= toInteger (length str)
+    then error "index out of bounds"
+    else
+      let chr = str Array.! ind
+          arr = LangUtils.stringToArray [chr]
+       in StringLit arr
+($@) l r = error ("@ operator not supported for " ++ show l ++ ", " ++ show r)

@@ -76,6 +76,7 @@ toBinOp Tokens.Ee = Ast.Ee
 toBinOp Tokens.Ne = Ast.Ne
 toBinOp Tokens.LAnd = Ast.LAnd
 toBinOp Tokens.LOr = Ast.LOr
+toBinOp Tokens.At = Ast.At
 toBinOp tk = error ("expected binary operator, got: " ++ show tk)
 
 binOpPrec :: Ast.BinOp -> (Int, Int)
@@ -91,6 +92,7 @@ binOpPrec Ast.Add = (6, 7)
 binOpPrec Ast.Sub = (6, 7)
 binOpPrec Ast.Mult = (8, 9)
 binOpPrec Ast.Div = (8, 9)
+binOpPrec Ast.At = (10, 11)
 
 -- assume next char is infix operator
 -- parseInfix :: left -> tokens -> minPrec -> (expr, tokens)

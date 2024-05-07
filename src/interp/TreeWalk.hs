@@ -48,6 +48,7 @@ binOpTrans Ast.Ee = (Nothing, ($==))
 binOpTrans Ast.Ne = (Nothing, ($~=))
 binOpTrans Ast.LAnd = (Just True, ($&))
 binOpTrans Ast.LOr = (Just False, ($|))
+binOpTrans Ast.At = (Nothing, ($@))
 
 unOpTrans :: Ast.UnOp -> (Value -> Value)
 unOpTrans Ast.Pos = valuePos

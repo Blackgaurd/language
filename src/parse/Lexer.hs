@@ -39,6 +39,7 @@ matchChar (ch : chs) =
     ')' -> (RParen, chs)
     '{' -> (LBrace, chs)
     '}' -> (RBrace, chs)
+    '@' -> (At, chs)
     ';' -> (Semicolon, chs)
     ',' -> (Comma, chs)
     '&' -> (LAnd, chs)

@@ -4,6 +4,7 @@ data Token
   = Number String
   | Boolean Bool
   | Ident String
+  | StringLit String
   | Add
   | Sub
   | Mult
@@ -18,8 +19,8 @@ data Token
   | LOr -- logical or
   | LAnd -- logical and
   | Equal
-  | LBracket
-  | RBracket
+  | LParen
+  | RParen
   | LBrace
   | RBrace
   | Comma

@@ -61,13 +61,13 @@ executable language
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules:    LangUtils, Tokens, Ast, Lexer, ParseExpr, ParseStmt, ParseProc, ParseProg, TreeWalk, RunFile
+    other-modules:    LangUtils, Tokens, Ast, Lexer, ParseExpr, ParseStmt, ParseProc, ParseProg, TreeWalk, RunFile, Value
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.17.2.1, containers
+    build-depends:    base ^>=4.17.2.1, containers, array
 
     -- Directories containing source files.
     hs-source-dirs:   src, src/parse, src/interp
@@ -79,7 +79,7 @@ test-suite test-lexer
     type: exitcode-stdio-1.0
     main-is: TestLexer.hs
     other-modules: LangUtils, Tokens, Lexer
-    build-depends: base, containers, HUnit
+    build-depends: base, containers, array, HUnit
     hs-source-dirs: src, src/parse, tests
     default-language: Haskell2010
 
@@ -87,7 +87,7 @@ test-suite test-parsers
     type: exitcode-stdio-1.0
     main-is: TestParsers.hs
     other-modules: LangUtils, Tokens, Ast, Lexer, ParseExpr, ParseStmt, ParseProc, ParseProg
-    build-depends: base, containers, HUnit
+    build-depends: base, containers, array, HUnit
     hs-source-dirs: src, src/parse, tests
     default-language: Haskell2010
 

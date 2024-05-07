@@ -1,5 +1,6 @@
 module Ast where
 
+import qualified Data.Array as Array
 import Data.List (intercalate)
 
 data UnOp = Pos | Neg | LNot deriving (Show, Eq)
@@ -28,6 +29,7 @@ data Expr
   | Num String
   | Boolean Bool
   | Var Identifier
+  | StringLit (Array.Array Int Char)
   deriving (Show, Eq)
 
 data Stmt
@@ -75,6 +77,7 @@ exprToString (Call name args) = name ++ "(" ++ commaSep args ++ ")"
 exprToString (Num val) = val
 exprToString (Boolean val) = if val then "!t" else "!f"
 exprToString (Var val) = val
+exprToString (StringLit str) = "\"" ++ Array.elems str ++ "\""
 
 stmtToString :: Stmt -> String
 stmtToString (Set var value) = var ++ "=" ++ exprToString value ++ ";"

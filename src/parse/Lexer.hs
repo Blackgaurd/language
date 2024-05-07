@@ -35,8 +35,8 @@ matchChar (ch : chs) =
     '-' -> (Sub, chs)
     '*' -> (Mult, chs)
     '/' -> (Div, chs)
-    '(' -> (LBracket, chs)
-    ')' -> (RBracket, chs)
+    '(' -> (LParen, chs)
+    ')' -> (RParen, chs)
     '{' -> (LBrace, chs)
     '}' -> (RBrace, chs)
     ';' -> (Semicolon, chs)
@@ -61,6 +61,16 @@ matchChar (ch : chs) =
       Just _ -> (LNot, chs)
     _ -> error ("unrecognized character: " ++ [ch])
 
+readStringLit :: String -> (Token, String)
+readStringLit ('"' : chrs) = helper chrs []
+ where
+  helper :: String -> String -> (Token, String)
+  helper [] _ = error "unexpected eof when reading string"
+  helper ('"' : rest) acc = (StringLit (reverse acc), rest)
+  helper (ch : rest) acc = helper rest (ch : acc)
+readStringLit (x : _) = error ("expected quote to read string, got=" ++ [x])
+readStringLit [] = error "unexpected eof when reading string"
+
 -- tokenizeH :: input -> acc -> Tokens
 tokenizeH :: String -> [Token] -> [Token]
 tokenizeH [] acc = reverse (Eof : acc)
@@ -70,22 +80,23 @@ tokenizeH str@(ch : chs) acc
       let (word, rest) = readWord str
           token = if all isDigit word then Number word else matchKeyword word
        in tokenizeH rest (token : acc)
+  | ch == '"' = let (strlit, rest) = readStringLit str in tokenizeH rest (strlit : acc)
   | otherwise = let (token, rest) = matchChar str in tokenizeH rest (token : acc)
 
 -- tokenize :: input -> Tokens
 tokenize :: String -> [Token]
 tokenize s = tokenizeH s []
 
--- checkBrackets :: Tokens -> whether brackets match
-checkBrackets :: [Token] -> Bool
-checkBrackets tokens = cbh tokens []
+-- checkParens :: Tokens -> whether brackets match
+checkParens :: [Token] -> Bool
+checkParens tokens = cbh tokens []
  where
   cbh :: [Token] -> [Token] -> Bool
   cbh [] [] = True
   cbh [] _ = False
-  cbh (LBracket : tks) stk = cbh tks (LBracket : stk)
-  cbh (RBracket : tks) (LBracket : stk) = cbh tks stk
-  cbh (RBracket : _) _ = False
+  cbh (LParen : tks) stk = cbh tks (LParen : stk)
+  cbh (RParen : tks) (LParen : stk) = cbh tks stk
+  cbh (RParen : _) _ = False
   cbh (LBrace : tks) stk = cbh tks (LBrace : stk)
   cbh (RBrace : tks) (LBrace : stk) = cbh tks stk
   cbh (RBrace : _) _ = False

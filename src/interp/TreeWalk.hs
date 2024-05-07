@@ -1,26 +1,17 @@
 module TreeWalk where
 
 import qualified Ast
+import qualified Data.Array as Array
 import qualified Data.Map as Map
-import GHC.Integer (divInteger)
 import qualified LangUtils
 import qualified Lexer
 import qualified ParseProg
+import Value
 
 {- INTERPRETER TYPES -}
-data Value = Num Integer | Boolean Bool | Void deriving (Show)
 type VarEnv = Map.Map Ast.Identifier Value
 type ProcEnv = Map.Map Ast.Identifier Ast.Procedure
 type Builtin = [Value] -> IO Value
-
-instance Eq Value where
-  (Num a) == (Num b) = a == b
-  (Boolean a) == (Boolean b) = a == b
-  a == b = error ("== not defined for " ++ show a ++ " and " ++ show b)
-
-instance Ord Value where
-  compare (Num a) (Num b) = compare a b
-  compare a b = error ("ordering not defiend for " ++ show a ++ " and " ++ show b)
 
 {- BUILTINS -}
 builtins :: Map.Map Ast.Identifier Builtin
@@ -37,50 +28,46 @@ dispValue :: [Value] -> IO Value
 dispValue [] = putStrLn "" >> return Void
 dispValue [Num x] = print x >> return Void
 dispValue [Boolean b] = putStrLn (if b then "!t" else "!f") >> return Void
+dispValue [StringLit str] = putStrLn (Array.elems str) >> return Void
 dispValue [Void] = putStrLn "<void>" >> return Void
 dispValue _ = error "disp only takes one argument"
 
 {- TREE WALKING INTERPRETER -}
-numBinOp :: (Integer -> Integer -> Integer) -> Value -> Value -> Value
-numBinOp op (Num a) (Num b) = Num (op a b)
-numBinOp _ l r = error ("arithmetic infix operator not supported for lhs=" ++ show l ++ ", rhs=" ++ show r)
-
-logicalBinOp :: (Bool -> Bool -> Bool) -> Value -> Value -> Value
-logicalBinOp op (Boolean a) (Boolean b) = Boolean (op a b)
-logicalBinOp _ l r = error ("logical infix operator not supported for lhs=" ++ show l ++ ", rhs=" ++ show r)
-
-binOpTrans :: Ast.BinOp -> (Value -> Value -> Value)
-binOpTrans Ast.Add = numBinOp (+)
-binOpTrans Ast.Sub = numBinOp (-)
-binOpTrans Ast.Mult = numBinOp (*)
-binOpTrans Ast.Div = numBinOp divInteger
-binOpTrans Ast.Lt = \a b -> Boolean ((<=) a b)
-binOpTrans Ast.Gt = \a b -> Boolean ((>=) a b)
-binOpTrans Ast.Le = \a b -> Boolean ((<) a b)
-binOpTrans Ast.Ge = \a b -> Boolean ((>) a b)
-binOpTrans Ast.Ee = \a b -> Boolean ((==) a b)
-binOpTrans Ast.Ne = \a b -> Boolean ((/=) a b)
-binOpTrans Ast.LAnd = logicalBinOp (&&)
-binOpTrans Ast.LOr = logicalBinOp (||)
-
-numUnOp :: (Integer -> Integer) -> Value -> Value
-numUnOp op (Num a) = Num (op a)
-numUnOp _ r = error ("arithmetic prefix operator not supported for rhs=" ++ show r)
-
-logicalUnOp :: (Bool -> Bool) -> Value -> Value
-logicalUnOp op (Boolean a) = Boolean (op a)
-logicalUnOp _ r = error ("logical prefix operator not supported for rhs=" ++ show r)
+-- boolean in return is whether or not to short ciruit,
+-- and identity value for if short circuit is performed
+binOpTrans :: Ast.BinOp -> (Maybe Bool, Value -> Value -> Value)
+binOpTrans Ast.Add = (Nothing, ($+))
+binOpTrans Ast.Sub = (Nothing, ($-))
+binOpTrans Ast.Mult = (Nothing, ($*))
+binOpTrans Ast.Div = (Nothing, ($/))
+binOpTrans Ast.Gt = (Nothing, ($>))
+binOpTrans Ast.Lt = (Nothing, ($<))
+binOpTrans Ast.Ge = (Nothing, ($>=))
+binOpTrans Ast.Le = (Nothing, ($<=))
+binOpTrans Ast.Ee = (Nothing, ($==))
+binOpTrans Ast.Ne = (Nothing, ($~=))
+binOpTrans Ast.LAnd = (Just True, ($&))
+binOpTrans Ast.LOr = (Just False, ($|))
 
 unOpTrans :: Ast.UnOp -> (Value -> Value)
-unOpTrans Ast.Pos = numUnOp id
-unOpTrans Ast.Neg = numUnOp negate
-unOpTrans Ast.LNot = logicalUnOp not
+unOpTrans Ast.Pos = valuePos
+unOpTrans Ast.Neg = valueNot
+unOpTrans Ast.LNot = valueNot
 
 interpExpr :: VarEnv -> ProcEnv -> Ast.Expr -> IO Value
-interpExpr varEnv procEnv (Ast.Bin op lhs rhs) = do
-  l <- interpExpr varEnv procEnv lhs
-  r <- interpExpr varEnv procEnv rhs
-  return (binOpTrans op l r)
+interpExpr varEnv procEnv (Ast.Bin op lhs rhs) =
+  let (scIdent, vOp) = binOpTrans op
+   in case scIdent of
+        Nothing -> do
+          l <- interpExpr varEnv procEnv lhs
+          r <- interpExpr varEnv procEnv rhs
+          return (vOp l r)
+        Just ident ->
+          -- short circuiting
+          interpExpr varEnv procEnv lhs >>= \l ->
+            if isTruthy l == ident
+              then interpExpr varEnv procEnv rhs >>= \r -> return (vOp l r)
+              else return l
 interpExpr varEnv procEnv (Ast.Un op rhs) = do
   r <- interpExpr varEnv procEnv rhs
   return (unOpTrans op r)
@@ -96,6 +83,7 @@ interpExpr varEnv procEnv (Ast.Call name args) =
             interpProc Map.empty procEnv proc interpArgs
 interpExpr _ _ (Ast.Num val) = return (Num (read val))
 interpExpr _ _ (Ast.Boolean val) = return (Boolean val)
+interpExpr _ _ (Ast.StringLit str) = return (StringLit str)
 interpExpr varEnv procEnv (Ast.Var name) =
   if isBuiltin name || Map.member name procEnv
     then error (name ++ " is a builtin or procedure")

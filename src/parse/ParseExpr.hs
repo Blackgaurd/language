@@ -1,6 +1,7 @@
 module ParseExpr where
 
 import qualified Ast
+import qualified LangUtils
 import qualified Tokens
 
 {-
@@ -27,13 +28,14 @@ parseExprPrec tokens@(Tokens.Sub : _) minPrec =
 parseExprPrec tokens@(Tokens.LNot : _) minPrec =
   let (unexp, tks) = parsePrefix tokens
    in parseInfix unexp tks minPrec
-parseExprPrec (Tokens.LBracket : tks) minPrec =
+parseExprPrec (Tokens.LParen : tks) minPrec =
   let (lhs, tks2) = parseExprPrec tks minPrecedence
    in parseInfix lhs (tail tks2) minPrec
 parseExprPrec (Tokens.Number val : tks) minPrec = parseInfix (Ast.Num val) tks minPrec
 parseExprPrec (Tokens.Boolean b : tks) minPrec = parseInfix (Ast.Boolean b) tks minPrec
+parseExprPrec (Tokens.StringLit str : tks) minPrec = parseInfix (Ast.StringLit (LangUtils.stringToArray str)) tks minPrec
 parseExprPrec (Tokens.Ident name : tks) minPrec
-  | head tks == Tokens.LBracket =
+  | head tks == Tokens.LParen =
       let (args, tks2) = parseExprList tks
        in parseInfix (Ast.Call name args) tks2 minPrec
   | otherwise = parseInfix (Ast.Var name) tks minPrec
@@ -97,7 +99,7 @@ parseInfix lhs tokens@(Tokens.Eof : _) _ = (lhs, tokens) -- should be error, une
 parseInfix lhs tokens@(Tokens.Semicolon : _) _ = (lhs, tokens)
 parseInfix lhs tokens@(Tokens.Comma : _) _ = (lhs, tokens) -- TODO: only allow this when parsing expression list
 parseInfix lhs tokens@(Tokens.Equal : _) _ = (lhs, tokens) -- TODO: should be error, implement later
-parseInfix lhs tokens@(Tokens.RBracket : _) _ = (lhs, tokens)
+parseInfix lhs tokens@(Tokens.RParen : _) _ = (lhs, tokens)
 parseInfix lhs tokens@(Tokens.Then : _) _ = (lhs, tokens)
 parseInfix lhs tokens@(tk : tks) minPrec
   | minPrec < lPrec =
@@ -118,19 +120,19 @@ parseInfix lhs tks minPrec =
     )
 
 {- ----- PARSE EXPR LIST ----- -}
--- assumes first token is LBracket,
--- consumes RBracket at end of list
+-- assumes first token is LParen,
+-- consumes RParen at end of list
 parseExprList :: [Tokens.Token] -> ([Ast.Expr], [Tokens.Token])
-parseExprList (Tokens.LBracket : tks) = parseExprListH tks []
+parseExprList (Tokens.LParen : tks) = parseExprListH tks []
 parseExprList (tk : _) = error ("expected lbracket, got=" ++ show tk)
 parseExprList [] = error "parseExprList: unexpected end of tokens"
 
 parseExprListH :: [Tokens.Token] -> [Ast.Expr] -> ([Ast.Expr], [Tokens.Token])
-parseExprListH (Tokens.RBracket : tks) acc = (reverse acc, tks)
+parseExprListH (Tokens.RParen : tks) acc = (reverse acc, tks)
 parseExprListH tks acc =
   let (expr, tks2) = parseExprPrec tks minPrecedence
    in case tks2 of
         (Tokens.Comma : tks3) -> parseExprListH tks3 (expr : acc)
-        (Tokens.RBracket : _) -> parseExprListH tks2 (expr : acc)
+        (Tokens.RParen : _) -> parseExprListH tks2 (expr : acc)
         (tk : _) -> error ("parseExprListH: expected comma or rbracket, got=" ++ show tk)
         [] -> error "parseExprListH: unexpected end of tokens"

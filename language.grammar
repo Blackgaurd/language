@@ -29,6 +29,7 @@
              | <identifier>
              | <number>
              | <boolean>
+             | <string>
 
 <expression-list> = <expression>
                   | <expression-list> , <expression>
@@ -36,6 +37,10 @@
 <identifier> = # string of <digit> | <alpha> | ! | ?, but not all <digit>
 
 <number> = # string of <digit>
+
+<boolean> = !t | !f
+
+<string> = "{<character>}*"
 
 <boolean> = !t | !f
 

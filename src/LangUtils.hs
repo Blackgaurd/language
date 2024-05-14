@@ -28,3 +28,8 @@ concatArrays arr1 arr2 =
 
 arraysEqual :: ArrayIC -> ArrayIC -> Bool
 arraysEqual arr1 arr2 = all (uncurry (==)) (zip (Array.elems arr1) (Array.elems arr2))
+
+lengthIs1 :: [a] -> Bool
+lengthIs1 [] = False
+lengthIs1 [_] = True
+lengthIs1 _ = False

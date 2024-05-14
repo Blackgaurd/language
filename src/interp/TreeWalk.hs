@@ -34,7 +34,7 @@ binOpTrans procEnv (Ast.InfixIdent name) =
 
 unOpTrans :: Ast.UnOp -> (Value -> Value)
 unOpTrans Ast.Pos = valuePos
-unOpTrans Ast.Neg = valueNot
+unOpTrans Ast.Neg = valueNeg
 unOpTrans Ast.LNot = valueNot
 
 interpExpr :: Env.VarEnv -> Env.ProcEnv -> Ast.Expr -> IO Value

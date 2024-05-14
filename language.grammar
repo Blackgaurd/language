@@ -19,6 +19,7 @@
             | when <expression> then <statement>
             | when <expression> then <statement> otherwise <statement>
             # TODO: unless statement
+            | while <expression> then <statement>
 
 <block> = { {<statement>}* }
 

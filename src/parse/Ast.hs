@@ -41,6 +41,7 @@ data Stmt
   | BlockStmt Block
   | When Expr Block
   | WhenOtherwise Expr Block Block
+  | While Expr Block
   deriving (Show, Eq)
 
 type Block = [Stmt]
@@ -94,6 +95,7 @@ stmtToString (WhenOtherwise expr tStmts fStmts) =
   let tString = intercalate "" (map stmtToString tStmts)
       fString = intercalate "" (map stmtToString fStmts)
    in "when(" ++ exprToString expr ++ ")then{" ++ tString ++ "}otherwise{" ++ fString ++ "}"
+stmtToString (While expr stmts) = "while(" ++ exprToString expr ++ ")then{" ++ intercalate "" (map stmtToString stmts) ++ "}"
 
 procToString :: (Identifier, Procedure) -> String
 procToString (name, Proc args body) =

@@ -51,6 +51,7 @@ parseStmtTests =
   , ("when 1 == 1 then x = 4;", "when((1==1))then{x=4;}")
   , ("when 1 + 2 * 3 then {x = x + 1;} otherwise x = x- 1;", "when((1+(2*3)))then{x=(x+1);}otherwise{x=(x-1);}")
   , ("when x == 1 then {a();} otherwise when x == 2 then b();", "when((x==1))then{a();}otherwise{when((x==2))then{b();}}")
+  , ("while a + 1 == b then {!disp(1);}", "while(((a+1)==b))then{!disp(1);}")
   ]
 
 parseProcTests =

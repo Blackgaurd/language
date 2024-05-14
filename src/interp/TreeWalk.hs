@@ -102,6 +102,11 @@ interpBlock varEnv procEnv (stmt : stmts) =
             if isTruthy check
               then interpBlockEnv (Ast.BlockStmt tStmts : stmts)
               else interpBlockEnv (Ast.BlockStmt fStmts : stmts)
+        (Ast.While expr wStmts) ->
+          interpExprEnv expr >>= \check ->
+            if isTruthy check
+              then interpBlockEnv (Ast.BlockStmt wStmts : stmt : stmts)
+              else interpBlockEnv stmts
 
 interpProc :: Env.ProcEnv -> Ast.Procedure -> [Value] -> IO Value
 interpProc procEnv (Ast.Proc params body) args =

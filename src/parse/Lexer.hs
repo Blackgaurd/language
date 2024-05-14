@@ -25,6 +25,7 @@ matchKeyword "!f" = Boolean False
 matchKeyword "when" = When
 matchKeyword "then" = Then
 matchKeyword "otherwise" = Otherwise
+matchKeyword "while" = While
 matchKeyword str = Ident str
 
 nextToken :: String -> (Token, String)

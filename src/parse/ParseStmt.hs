@@ -19,6 +19,7 @@ parseStmt (Tokens.Return : tks) =
         _ -> error ("expected semicolon, got=" ++ show (head tks2))
 parseStmt tokens@(Tokens.LBrace : _) = let (stmts, tks) = parseBlock tokens in (Ast.BlockStmt stmts, tks)
 parseStmt tokens@(Tokens.When : _) = parseWhen tokens
+parseStmt tokens@(Tokens.While : _) = parseWhile tokens
 parseStmt tokens =
   let (expr, tks) = ParseExpr.parseExpr tokens
    in case tks of
@@ -54,5 +55,16 @@ parseWhen (Tokens.When : tks) =
                   let (fStmt, tks6) = parseStmt tks5
                    in (Ast.WhenOtherwise expr (stmtToBlock tStmt) (stmtToBlock fStmt), tks6)
                 _ -> (Ast.When expr (stmtToBlock tStmt), tks4)
-        _ -> error "did not get Then token as expected"
+        _ -> error "parseWhen: did not get Then token as expected"
 parseWhen tokens = error ("expected When, got=" ++ show (head tokens))
+
+{- PARSE WHILE STATEMENT -}
+parseWhile :: [Tokens.Token] -> (Ast.Stmt, [Tokens.Token])
+parseWhile (Tokens.While : tks) =
+  let (expr, tks2) = ParseExpr.parseExpr tks
+   in case tks2 of
+        (Tokens.Then : tks3) ->
+          let (innerStmt, tks4) = parseStmt tks3
+           in (Ast.While expr (stmtToBlock innerStmt), tks4)
+        _ -> error "parseWhile: did not get Then token as expected"
+parseWhile tokens = error ("expected While, got=" ++ show (head tokens))

@@ -32,5 +32,6 @@ data Token
   | When
   | Then
   | Otherwise
+  | While
   | Eof
   deriving (Show, Eq)

@@ -39,7 +39,7 @@ parseExprPrec (Tokens.Ident name : tks) minPrec
       let (args, tks2) = parseExprList tks
        in parseInfix (Ast.Call name args) tks2 minPrec
   | otherwise = parseInfix (Ast.Var name) tks minPrec
-parseExprPrec tokens _ = error ("parseExprPrec error" ++ show tokens)
+parseExprPrec tokens _ = error ("parseExprPrec error: " ++ show tokens)
 
 {- ----- PREFIX OPERATOR ----- -}
 toUnOp :: Tokens.Token -> Ast.UnOp

@@ -32,6 +32,8 @@ tokenizeTests =
   , ("((1)) + (3 * (4 + 5))", [LParen, LParen, Number "1", RParen, RParen, Add, LParen, Number "3", Mult, LParen, Number "4", Add, Number "5", RParen, RParen, Eof])
   , ("proc doNothing(x, y) { x = x + 1;y=y + 2; z=(x/y)*2;}", [Proc, Ident "doNothing", LParen, Ident "x", Comma, Ident "y", RParen, LBrace, Ident "x", Equal, Ident "x", Add, Number "1", Semicolon, Ident "y", Equal, Ident "y", Add, Number "2", Semicolon, Ident "z", Equal, LParen, Ident "x", Div, Ident "y", RParen, Mult, Number "2", Semicolon, RBrace, Eof])
   , ("proc SUM (A, B){RETURN=A+B; return RETURN;}", [Proc, Ident "SUM", LParen, Ident "A", Comma, Ident "B", RParen, LBrace, Ident "RETURN", Equal, Ident "A", Add, Ident "B", Semicolon, Return, Ident "RETURN", Semicolon, RBrace, Eof])
+  , ("a `plus` b", [Ident "a", InfixIdent "plus", Ident "b", Eof])
+  , ("1 `!!?` 9", [Number "1", InfixIdent "!!?", Number "9", Eof])
   ]
 
 checkParensTests =

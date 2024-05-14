@@ -5,6 +5,7 @@ data Token
   | Boolean Bool
   | Ident String
   | StringLit String
+  | InfixIdent String
   | Add
   | Sub
   | Mult
@@ -24,10 +25,14 @@ data Token
   | RParen
   | LBrace
   | RBrace
+  | LBracket
+  | RBracket
   | Comma
   | At
   | Semicolon
   | Proc
+  | InfixL
+  | InfixR
   | Return
   | When
   | Then

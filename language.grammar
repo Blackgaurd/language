@@ -12,6 +12,10 @@
 
 <procedure> = proc <space> <identifier> ( <identifier-list> ) <block>
 
+<infix-start> = infixl | infixr
+
+<infix-procedure> = <infix-start> <identifier> ( <identifier> , <identifier> ) [ <number> ] <block>
+
 <statement> = <identifier> = <expression> ;
             | <expression> ;
             | return {<expression>}? ;
@@ -20,6 +24,7 @@
             | when <expression> then <statement> otherwise <statement>
             # TODO: unless statement
             | while <expression> then <statement>
+            | <expression> `<identifier>` <expression>
 
 <block> = { {<statement>}* }
 

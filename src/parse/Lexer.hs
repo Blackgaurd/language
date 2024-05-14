@@ -8,8 +8,8 @@ import Tokens
 isIdentifierChar :: Char -> Bool
 isIdentifierChar ch = isAlpha ch || ch == '_' || isDigit ch || ch == '!' || ch == '?'
 
-readWord :: String -> (String, String)
-readWord s = helper s []
+readIdentWord :: String -> (String, String)
+readIdentWord s = helper s []
  where
   helper :: String -> String -> (String, String)
   helper [] acc = (reverse acc, [])
@@ -19,6 +19,8 @@ readWord s = helper s []
 
 matchKeyword :: String -> Token
 matchKeyword "proc" = Proc
+matchKeyword "infixl" = InfixL
+matchKeyword "infixr" = InfixR
 matchKeyword "return" = Return
 matchKeyword "!t" = Boolean True
 matchKeyword "!f" = Boolean False
@@ -33,7 +35,7 @@ nextToken [] = (Eof, [])
 nextToken str@(ch : chs)
   | isSpace ch = nextToken chs
   | isIdentifierChar ch =
-      let (word, rest) = readWord str
+      let (word, rest) = readIdentWord str
           token = if all isDigit word then Number word else matchKeyword word
        in (token, rest)
   | otherwise = case ch of
@@ -51,6 +53,8 @@ nextToken str@(ch : chs)
       ')' -> (RParen, chs)
       '{' -> (LBrace, chs)
       '}' -> (RBrace, chs)
+      '[' -> (LBracket, chs)
+      ']' -> (RBracket, chs)
       '@' -> (At, chs)
       ';' -> (Semicolon, chs)
       ',' -> (Comma, chs)
@@ -73,6 +77,7 @@ nextToken str@(ch : chs)
         Nothing -> error "expected character after ~"
         Just '=' -> (Ne, tail chs)
         Just _ -> (LNot, chs)
+      '`' -> let (ident, chrs) = readDefinedInfix str in (ident, chrs)
       _ -> error ("unrecognized character: " ++ [ch])
 
 readStringLit :: String -> (Token, String)
@@ -90,6 +95,15 @@ readStringLit ('"' : chrs) = helper chrs []
   helper (ch : rest) acc = helper rest (ch : acc)
 readStringLit (x : _) = error ("expected quote to read string, got=" ++ [x])
 readStringLit [] = error "unexpected eof when reading string"
+
+readDefinedInfix :: String -> (Token, String)
+readDefinedInfix ('`' : chrs) =
+  let (word, chrs2) = readIdentWord chrs
+   in case chrs2 of
+        ('`' : chrs3) -> (InfixIdent word, chrs3)
+        _ -> error "unexpected character when reading infix operator"
+readDefinedInfix (x : _) = error ("expected backtick to read infix operator, got=" ++ [x])
+readDefinedInfix [] = error "unexpected eof when reading infix operator"
 
 matchEscapeCharacter :: Char -> Char
 matchEscapeCharacter ch =

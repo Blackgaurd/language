@@ -1,6 +1,8 @@
 module Builtins where
 
 import qualified Ast
+import qualified Data.Array as Array
+import Data.Char (ord)
 import qualified Data.Map as Map
 import qualified LangUtils
 import Value
@@ -35,8 +37,9 @@ valType _ = error "!type takes one argument"
 
 ascii :: Builtin
 ascii [] = error "!ascii takes one argument"
-ascii [str] =
-  if LangUtils.lengthIs1 str
-    then (Num . ord . head) str
-    else error "!ascii input should be a string of length 1"
+ascii [StringLit lit] =
+  let str = Array.elems lit
+   in if LangUtils.lengthIs1 str
+        then return ((Num . toInteger . ord . head) str)
+        else error "!ascii input should be a string of length 1"
 ascii _ = error "!ascii takes one argument"

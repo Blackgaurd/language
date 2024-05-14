@@ -1,6 +1,7 @@
 module Main where
 
 import Ast
+import qualified Data.Map as Map
 import qualified Lexer
 import ParseExpr
 import ParseProc
@@ -61,15 +62,20 @@ parseProcTests =
   , ("proc 8funnyname_123!???() {return 9;{return 99; return 999;}}", "proc 8funnyname_123!???(){return 9;{return 99;return 999;}}")
   ]
 
+parseProgTests =
+  [ ("proc main() {x = a `myPlus` b;} infixr myPlus(c, d)[3]{ return c + d; }", "proc main(){x=(a`myPlus`b);}infixr myPlus(c,d)[3]{return (c+d);}")
+  ]
+
 toTest testFunction x =
   let (input, expected) = x
    in TestLabel ("input: " ++ show input) (TestCase $ assertEqual ("input: " ++ show input) expected (testFunction input))
 
 tests =
   TestList
-    ( map (toTest (exprToString . fst . parseExpr . Lexer.tokenize)) parseExprTests
-        ++ map (toTest (stmtToString . fst . parseStmt . Lexer.tokenize)) parseStmtTests
-        ++ map (toTest (procToString . fst . parseProc . Lexer.tokenize)) parseProcTests
+    ( map (toTest (exprToString . fst . parseExpr Map.empty . Lexer.tokenize)) parseExprTests
+        ++ map (toTest (stmtToString . fst . parseStmt Map.empty . Lexer.tokenize)) parseStmtTests
+        ++ map (toTest (procToString . fst . parseProc Map.empty . Lexer.tokenize)) parseProcTests
+        ++ map (toTest (progToString . parseProg . Lexer.tokenize)) parseProgTests
     )
 
 main :: IO ()

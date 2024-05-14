@@ -12,21 +12,25 @@ import Value
 {- TREE WALKING INTERPRETER -}
 -- boolean in return is whether or not to short ciruit,
 -- and identity value for if short circuit is performed
-binOpTrans :: Ast.BinOp -> (Maybe Bool, Value -> Value -> Value)
-binOpTrans Ast.Add = (Nothing, ($+))
-binOpTrans Ast.Sub = (Nothing, ($-))
-binOpTrans Ast.Mult = (Nothing, ($*))
-binOpTrans Ast.Div = (Nothing, ($/))
-binOpTrans Ast.Mod = (Nothing, ($%))
-binOpTrans Ast.Gt = (Nothing, ($>))
-binOpTrans Ast.Lt = (Nothing, ($<))
-binOpTrans Ast.Ge = (Nothing, ($>=))
-binOpTrans Ast.Le = (Nothing, ($<=))
-binOpTrans Ast.Ee = (Nothing, ($==))
-binOpTrans Ast.Ne = (Nothing, ($~=))
-binOpTrans Ast.LAnd = (Just True, ($&))
-binOpTrans Ast.LOr = (Just False, ($|))
-binOpTrans Ast.At = (Nothing, ($@))
+binOpTrans :: Env.ProcEnv -> Ast.BinOp -> (Maybe Bool, Value -> Value -> IO Value)
+binOpTrans _ Ast.Add = (Nothing, \l r -> return (($+) l r))
+binOpTrans _ Ast.Sub = (Nothing, \l r -> return (($-) l r))
+binOpTrans _ Ast.Mult = (Nothing, \l r -> return (($*) l r))
+binOpTrans _ Ast.Div = (Nothing, \l r -> return (($/) l r))
+binOpTrans _ Ast.Mod = (Nothing, \l r -> return (($%) l r))
+binOpTrans _ Ast.Gt = (Nothing, \l r -> return (($>) l r))
+binOpTrans _ Ast.Lt = (Nothing, \l r -> return (($<) l r))
+binOpTrans _ Ast.Ge = (Nothing, \l r -> return (($>=) l r))
+binOpTrans _ Ast.Le = (Nothing, \l r -> return (($<=) l r))
+binOpTrans _ Ast.Ee = (Nothing, \l r -> return (($==) l r))
+binOpTrans _ Ast.Ne = (Nothing, \l r -> return (($~=) l r))
+binOpTrans _ Ast.LAnd = (Just True, \l r -> return (($&) l r))
+binOpTrans _ Ast.LOr = (Just False, \l r -> return (($|) l r))
+binOpTrans _ Ast.At = (Nothing, \l r -> return (($@) l r))
+binOpTrans procEnv (Ast.InfixIdent name) =
+  case Map.lookup name procEnv of
+    Nothing -> error ("can not find infix operator: " ++ name)
+    Just proc -> (Nothing, \lArg rArg -> interpProc procEnv proc [lArg, rArg])
 
 unOpTrans :: Ast.UnOp -> (Value -> Value)
 unOpTrans Ast.Pos = valuePos
@@ -35,17 +39,18 @@ unOpTrans Ast.LNot = valueNot
 
 interpExpr :: Env.VarEnv -> Env.ProcEnv -> Ast.Expr -> IO Value
 interpExpr varEnv procEnv (Ast.Bin op lhs rhs) =
-  let (scIdent, vOp) = binOpTrans op
+  -- scIdent = short circuit ident?
+  let (scIdent, vOp) = binOpTrans procEnv op
    in case scIdent of
         Nothing -> do
           l <- interpExpr varEnv procEnv lhs
           r <- interpExpr varEnv procEnv rhs
-          return (vOp l r)
+          vOp l r
         Just ident ->
           -- short circuiting
           interpExpr varEnv procEnv lhs >>= \l ->
             if isTruthy l == ident
-              then interpExpr varEnv procEnv rhs >>= \r -> return (vOp l r)
+              then interpExpr varEnv procEnv rhs >>= \r -> vOp l r
               else return l
 interpExpr varEnv procEnv (Ast.Un op rhs) = do
   r <- interpExpr varEnv procEnv rhs
@@ -113,11 +118,24 @@ interpProc procEnv (Ast.Proc params body) args =
   if length params /= length args
     then error "wrong number of arguments"
     else
-      -- Map.union prefers elements from the first list
       let argsMap = Map.fromList (zip params args)
           newVarEnv = Env.mapToVarEnv argsMap
        in interpBlock newVarEnv procEnv body >>= \(_, _, val) ->
             return val
+interpProc procEnv (Ast.InfixL _ l r body) args =
+  if length args /= 2
+    then error "infix operators must take 2 arguments"
+    else
+      let argsMap = Map.fromList (zip [l, r] args)
+          newVarEnv = Env.mapToVarEnv argsMap
+       in interpBlock newVarEnv procEnv body >>= \(_, _, val) -> return val
+interpProc procEnv (Ast.InfixR _ l r body) args =
+  if length args /= 2
+    then error "infix operators must take 2 arguments"
+    else
+      let argsMap = Map.fromList (zip [l, r] args)
+          newVarEnv = Env.mapToVarEnv argsMap
+       in interpBlock newVarEnv procEnv body >>= \(_, _, val) -> return val
 
 interpProg :: Ast.Program -> IO Value
 interpProg (Ast.Prog procedures) =

@@ -3,6 +3,8 @@ module Ast where
 import qualified Data.Array as Array
 import Data.List (intercalate)
 
+type Identifier = String
+
 data UnOp = Pos | Neg | LNot deriving (Show, Eq)
 
 data BinOp
@@ -20,9 +22,8 @@ data BinOp
   | LOr -- logical or
   | LAnd -- logical and
   | At
+  | InfixIdent Identifier
   deriving (Show, Eq)
-
-type Identifier = String
 
 data Expr
   = Bin BinOp Expr Expr
@@ -46,7 +47,11 @@ data Stmt
 
 type Block = [Stmt]
 
-data Procedure = Proc [Identifier] Block deriving (Show, Eq)
+data Procedure
+  = Proc [Identifier] Block
+  | InfixL Int Identifier Identifier Block
+  | InfixR Int Identifier Identifier Block
+  deriving (Show, Eq)
 
 newtype Program = Prog [(Identifier, Procedure)] deriving (Show)
 
@@ -66,6 +71,7 @@ binOpToString Ne = "~="
 binOpToString LOr = "|"
 binOpToString LAnd = "&"
 binOpToString At = "@"
+binOpToString (InfixIdent name) = "`" ++ name ++ "`"
 
 unOpToString :: UnOp -> String
 unOpToString Pos = "+"
@@ -100,3 +106,11 @@ stmtToString (While expr stmts) = "while(" ++ exprToString expr ++ ")then{" ++ i
 procToString :: (Identifier, Procedure) -> String
 procToString (name, Proc args body) =
   "proc " ++ name ++ "(" ++ intercalate "," args ++ "){" ++ intercalate "" (map stmtToString body) ++ "}"
+procToString (name, InfixL prec lhs rhs body) =
+  "infixl " ++ name ++ "(" ++ lhs ++ "," ++ rhs ++ ")[" ++ show prec ++ "]{" ++ intercalate "" (map stmtToString body) ++ "}"
+procToString (name, InfixR prec lhs rhs body) =
+  "infixr " ++ name ++ "(" ++ lhs ++ "," ++ rhs ++ ")[" ++ show prec ++ "]{" ++ intercalate "" (map stmtToString body) ++ "}"
+
+-- newtype Program = Prog [(Identifier, Procedure)] deriving (Show)
+progToString :: Program -> String
+progToString (Prog procs) = intercalate "" (map procToString procs)

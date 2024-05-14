@@ -2,6 +2,7 @@ module LangUtils where
 
 import qualified Data.Array as Array
 import qualified Data.Set as Set
+import Text.Read (readMaybe)
 
 type ArrayIC = Array.Array Integer Char
 
@@ -33,3 +34,9 @@ lengthIs1 :: [a] -> Bool
 lengthIs1 [] = False
 lengthIs1 [_] = True
 lengthIs1 _ = False
+
+readBoundedInt :: String -> Int
+readBoundedInt str =
+  case readMaybe str of
+    Just n | n <= maxBound -> n
+    _ -> error "input is not an integer or exceeds maxBound"

@@ -106,17 +106,12 @@ consumeUntil check (ch : chs)
 
 -- tokenizeH :: input -> acc -> Tokens
 tokenizeH :: String -> [Token] -> [Token]
-tokenizeH [] acc = reverse acc
+tokenizeH [] acc =
+  case LangUtils.safeHead acc of
+    Nothing -> [Eof]
+    Just Eof -> reverse acc
+    Just _ -> reverse (Eof : acc)
 tokenizeH str acc = let (tok, rest) = nextToken str in tokenizeH rest (tok : acc)
-
-{- tokenizeH str@(ch : chs) acc =
-  | isSpace ch = tokenizeH chs acc
-  | isIdentifierChar ch =
-      let (word, rest) = readWord str
-          token = if all isDigit word then Number word else matchKeyword word
-       in tokenizeH rest (token : acc)
-  | ch == '"' = let (strlit, rest) = readStringLit str in tokenizeH rest (strlit : acc)
-  | otherwise = let (token, rest) = matchChar str in tokenizeH rest (token : acc) -}
 
 -- tokenize :: input -> Tokens
 tokenize :: String -> [Token]

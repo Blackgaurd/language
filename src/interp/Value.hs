@@ -14,6 +14,10 @@ valueToString val =
     StringLit s -> Array.elems s
     Void -> "<void>"
 
+isTruthy :: Value -> Bool
+isTruthy (Boolean b) = b
+isTruthy x = error ("expected boolean value, got=" ++ show x)
+
 -- prefix operators
 valueNeg :: Value -> Value
 valueNeg (Num a) = Num (-a)

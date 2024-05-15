@@ -16,6 +16,7 @@ builtins =
     , ("!displn", dispWith putStrLn)
     , ("!type", valType)
     , ("!ascii", ascii)
+    , ("!len", len)
     ]
 
 isBuiltin :: Ast.Identifier -> Bool
@@ -43,3 +44,10 @@ ascii [StringLit lit] =
         then return ((Num . toInteger . ord . head) str)
         else error "!ascii input should be a string of length 1"
 ascii _ = error "!ascii takes one argument"
+
+len :: Builtin
+len [] = error "!len takes one argument"
+len [StringLit lit] =
+  let l = toInteger (length lit)
+   in return (Num l)
+len _ = error "!len takes one argument"

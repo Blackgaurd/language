@@ -222,6 +222,7 @@ All builtin functions are prefixed by a `!` character.
 | `!displn(x, y, ...)` | outputs `x`, `y` and all other arguments to `stdin`, separated by spaces and ending with a newline |
 | `!type(x)` | returns a string `"integer"`, `"boolean"` or `"string"` based off the type of `x` |
 | `!ascii(x)` | takes a string of length 1, and returns its ascii value |
+| `!len(x)` | returns the length of a string |
 
 ### infix operator definitions
 

@@ -5,7 +5,11 @@ import Data.List (intercalate)
 
 type Identifier = String
 
-data UnOp = Pos | Neg | LNot deriving (Show, Eq)
+data UnOp
+  = Pos
+  | Neg
+  | LNot
+  deriving (Show, Eq)
 
 data BinOp
   = Add
@@ -97,23 +101,36 @@ stmtToString (Set var value) = var ++ "=" ++ exprToString value ++ ";"
 stmtToString (Eval expr) = exprToString expr ++ ";"
 stmtToString (Return (Just expr)) = "return " ++ exprToString expr ++ ";"
 stmtToString (Return Nothing) = "return;"
-stmtToString (BlockStmt stmts) = "{" ++ intercalate "" (map stmtToString stmts) ++ "}"
-stmtToString (When expr stmts) = "when(" ++ exprToString expr ++ ")then{" ++ intercalate "" (map stmtToString stmts) ++ "}"
+stmtToString (BlockStmt stmts) =
+  let stmtsStr = intercalate "" (map stmtToString stmts)
+   in "{" ++ stmtsStr ++ "}"
+stmtToString (When expr stmts) =
+  let stmtsStr = intercalate "" (map stmtToString stmts)
+      exprStr = exprToString expr
+   in "when(" ++ exprStr ++ ")then{" ++ stmtsStr ++ "}"
 stmtToString (WhenOtherwise expr tStmts fStmts) =
   let tString = intercalate "" (map stmtToString tStmts)
       fString = intercalate "" (map stmtToString fStmts)
-   in "when(" ++ exprToString expr ++ ")then{" ++ tString ++ "}otherwise{" ++ fString ++ "}"
-stmtToString (While expr lStmts) = "while(" ++ exprToString expr ++ ")then{" ++ intercalate "" (map stmtToString lStmts) ++ "}"
+      exprStr = exprToString expr
+   in "when(" ++ exprStr ++ ")then{" ++ tString ++ "}otherwise{" ++ fString ++ "}"
+stmtToString (While expr stmts) =
+  let stmtsStr = intercalate "" (map stmtToString stmts)
+      exprStr = exprToString expr
+   in "while(" ++ exprStr ++ ")then{" ++ stmtsStr ++ "}"
 stmtToString Break = "break;"
 stmtToString Continue = "continue;"
 
 procToString :: (Identifier, Procedure) -> String
 procToString (name, Proc args body) =
-  "proc " ++ name ++ "(" ++ intercalate "," args ++ "){" ++ intercalate "" (map stmtToString body) ++ "}"
+  let argsStr = intercalate "," args
+      bodyStr = intercalate "" (map stmtToString body)
+   in "proc " ++ name ++ "(" ++ argsStr ++ "){" ++ bodyStr ++ "}"
 procToString (name, InfixL prec lhs rhs body) =
-  "infixl " ++ name ++ "(" ++ lhs ++ "," ++ rhs ++ ")[" ++ show prec ++ "]{" ++ intercalate "" (map stmtToString body) ++ "}"
+  let bodyStr = intercalate "" (map stmtToString body)
+   in "infixl " ++ name ++ "(" ++ lhs ++ "," ++ rhs ++ ")[" ++ show prec ++ "]{" ++ bodyStr ++ "}"
 procToString (name, InfixR prec lhs rhs body) =
-  "infixr " ++ name ++ "(" ++ lhs ++ "," ++ rhs ++ ")[" ++ show prec ++ "]{" ++ intercalate "" (map stmtToString body) ++ "}"
+  let bodyStr = intercalate "" (map stmtToString body)
+   in "infixr " ++ name ++ "(" ++ lhs ++ "," ++ rhs ++ ")[" ++ show prec ++ "]{" ++ bodyStr ++ "}"
 
 -- newtype Program = Prog [(Identifier, Procedure)] deriving (Show)
 progToString :: Program -> String

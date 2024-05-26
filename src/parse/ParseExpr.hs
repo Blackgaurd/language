@@ -39,9 +39,13 @@ parseExprPrec procMap tokens@(Tokens.LNot : _) minPrec =
 parseExprPrec procMap (Tokens.LParen : tks) minPrec =
   let (lhs, tks2) = parseExprPrec procMap tks minPrecedence
    in parseInfix procMap lhs (tail tks2) minPrec
-parseExprPrec procMap (Tokens.Number val : tks) minPrec = parseInfix procMap (Ast.Num val) tks minPrec
-parseExprPrec procMap (Tokens.Boolean b : tks) minPrec = parseInfix procMap (Ast.Boolean b) tks minPrec
-parseExprPrec procMap (Tokens.StringLit str : tks) minPrec = parseInfix procMap (Ast.StringLit (LangUtils.stringToArray str)) tks minPrec
+parseExprPrec procMap (Tokens.Number val : tks) minPrec =
+  parseInfix procMap (Ast.Num val) tks minPrec
+parseExprPrec procMap (Tokens.Boolean b : tks) minPrec =
+  parseInfix procMap (Ast.Boolean b) tks minPrec
+parseExprPrec procMap (Tokens.StringLit str : tks) minPrec =
+  let strArray = LangUtils.stringToArray str
+   in parseInfix procMap (Ast.StringLit strArray) tks minPrec
 parseExprPrec procMap (Tokens.Ident name : tks) minPrec
   | head tks == Tokens.LParen =
       let (args, tks2) = parseExprList procMap tks

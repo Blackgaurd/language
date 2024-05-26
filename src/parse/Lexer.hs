@@ -38,7 +38,10 @@ nextToken str@(ch : chs)
   | isSpace ch = nextToken chs
   | isIdentifierChar ch =
       let (word, rest) = readIdentWord str
-          token = if all isDigit word then Number word else matchKeyword word
+          token =
+            if all isDigit word
+              then Number word
+              else matchKeyword word
        in (token, rest)
   | otherwise = case ch of
       '+' -> (Add, chs)
@@ -128,7 +131,9 @@ tokenizeH [] acc =
     Nothing -> [Eof]
     Just Eof -> reverse acc
     Just _ -> reverse (Eof : acc)
-tokenizeH str acc = let (tok, rest) = nextToken str in tokenizeH rest (tok : acc)
+tokenizeH str acc =
+  let (tok, rest) = nextToken str
+   in tokenizeH rest (tok : acc)
 
 -- tokenize :: input -> Tokens
 tokenize :: String -> [Token]

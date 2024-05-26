@@ -100,7 +100,9 @@ interpStmt varEnv procEnv stmt =
     (Ast.When expr tStmts) ->
       interpExpr varEnv procEnv expr >>= \check ->
         if isTruthy check
-          then let subEnv = Env.consVarEnv Map.empty varEnv in interpBlock subEnv procEnv tStmts
+          then
+            let subEnv = Env.consVarEnv Map.empty varEnv
+             in interpBlock subEnv procEnv tStmts
           else return (Finished, varEnv)
     (Ast.WhenOtherwise expr tStmts fStmts) ->
       interpExpr varEnv procEnv expr >>= \check ->

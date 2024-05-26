@@ -4,7 +4,12 @@ import qualified Data.Array as Array
 import GHC.Integer (divInteger, modInteger)
 import qualified LangUtils
 
-data Value = Num Integer | Boolean Bool | StringLit (Array.Array Integer Char) | Void deriving (Show)
+data Value
+  = Num Integer
+  | Boolean Bool
+  | StringLit (Array.Array Integer Char)
+  | Void
+  deriving (Show)
 
 valueToString :: Value -> String
 valueToString val =

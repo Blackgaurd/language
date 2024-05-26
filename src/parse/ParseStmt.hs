@@ -64,7 +64,9 @@ parseWhen procMap (Tokens.When : tks) isLoop =
            in case tks4 of
                 (Tokens.Otherwise : tks5) ->
                   let (fStmt, tks6) = parseStmt procMap tks5 isLoop
-                   in (Ast.WhenOtherwise expr (stmtToBlock tStmt) (stmtToBlock fStmt), tks6)
+                      tBlock = stmtToBlock tStmt
+                      fBlock = stmtToBlock fStmt
+                   in (Ast.WhenOtherwise expr tBlock fBlock, tks6)
                 _ -> (Ast.When expr (stmtToBlock tStmt), tks4)
         _ -> error "parseWhen: did not get Then token as expected"
 parseWhen _ tokens _ = error ("expected When, got=" ++ show (head tokens))
@@ -76,6 +78,7 @@ parseWhile procMap (Tokens.While : tks) =
    in case tks2 of
         (Tokens.Then : tks3) ->
           let (innerStmt, tks4) = parseStmt procMap tks3 True
-           in (Ast.While expr (stmtToBlock innerStmt), tks4)
+              innerBlock = stmtToBlock innerStmt
+           in (Ast.While expr innerBlock, tks4)
         _ -> error "parseWhile: did not get Then token as expected"
 parseWhile _ tokens = error ("expected While, got=" ++ show (head tokens))

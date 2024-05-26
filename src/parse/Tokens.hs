@@ -38,5 +38,7 @@ data Token
   | Then
   | Otherwise
   | While
+  | Break
+  | Continue
   | Eof
   deriving (Show, Eq)

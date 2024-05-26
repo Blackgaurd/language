@@ -75,43 +75,65 @@ interpExpr varEnv procEnv (Ast.Var name) =
       Nothing -> error ("undefined variable: " ++ name ++ ", varEnv=" ++ show varEnv)
       Just val -> return val
 
--- bool in return value is returned?
-interpBlock :: Env.VarEnv -> Env.ProcEnv -> Ast.Block -> IO (Bool, Env.VarEnv, Value)
-interpBlock varEnv _ [] = return (False, varEnv, Void)
+data StmtReturned
+  = Returned (Maybe Value)
+  | Broken
+  | Continued
+  | Finished
+  deriving (Show)
+
+interpStmt :: Env.VarEnv -> Env.ProcEnv -> Ast.Stmt -> IO (StmtReturned, Env.VarEnv)
+interpStmt varEnv procEnv stmt =
+  case stmt of
+    (Ast.Set name expr) ->
+      interpExpr varEnv procEnv expr >>= \val ->
+        let newVarEnv = Env.setIdent varEnv name val
+         in return (Finished, newVarEnv)
+    (Ast.Eval expr) -> interpExpr varEnv procEnv expr >> return (Finished, varEnv)
+    (Ast.Return Nothing) -> return (Returned Nothing, varEnv)
+    (Ast.Return (Just expr)) ->
+      interpExpr varEnv procEnv expr >>= \val ->
+        return (Returned (Just val), varEnv)
+    (Ast.BlockStmt bStmts) ->
+      let subEnv = Env.consVarEnv Map.empty varEnv
+       in interpBlock subEnv procEnv bStmts
+    (Ast.When expr tStmts) ->
+      interpExpr varEnv procEnv expr >>= \check ->
+        if isTruthy check
+          then let subEnv = Env.consVarEnv Map.empty varEnv in interpBlock subEnv procEnv tStmts
+          else return (Finished, varEnv)
+    (Ast.WhenOtherwise expr tStmts fStmts) ->
+      interpExpr varEnv procEnv expr >>= \check ->
+        let subEnv = Env.consVarEnv Map.empty varEnv
+         in if isTruthy check
+              then interpBlock subEnv procEnv tStmts
+              else interpBlock subEnv procEnv fStmts
+    (Ast.While expr wStmts) ->
+      interpExpr varEnv procEnv expr >>= \check ->
+        if isTruthy check
+          then
+            let subEnv = Env.consVarEnv Map.empty varEnv
+             in interpBlock subEnv procEnv wStmts >>= \(returned, retEnv) ->
+                  case returned of
+                    -- continue or finish:
+                    -- interpret while statement again, with updated env
+                    Continued -> interpStmt retEnv procEnv stmt
+                    Finished -> interpStmt retEnv procEnv stmt
+                    Broken -> return (Finished, retEnv)
+                    (Returned _) -> return (returned, retEnv)
+          else return (Finished, varEnv)
+    Ast.Break -> return (Broken, varEnv)
+    Ast.Continue -> return (Continued, varEnv)
+
+interpBlock :: Env.VarEnv -> Env.ProcEnv -> Ast.Block -> IO (StmtReturned, Env.VarEnv)
+interpBlock varEnv _ [] = return (Finished, Env.prevOrEmptyVarEnv varEnv)
 interpBlock varEnv procEnv (stmt : stmts) =
-  let interpExprEnv = interpExpr varEnv procEnv
-      interpBlockEnv = interpBlock varEnv procEnv
-   in case stmt of
-        (Ast.Set name expr) ->
-          interpExprEnv expr >>= \val ->
-            let newVarEnv = Env.setIdent varEnv name val
-             in interpBlock newVarEnv procEnv stmts
-        (Ast.Eval expr) -> interpExprEnv expr >> interpBlockEnv stmts
-        (Ast.Return Nothing) -> return (True, Env.prevOrEmptyVarEnv varEnv, Void)
-        (Ast.Return (Just expr)) ->
-          interpExprEnv expr >>= \retVal ->
-            return (True, Env.prevOrEmptyVarEnv varEnv, retVal)
-        (Ast.BlockStmt innerStmts) ->
-          let subEnv = Env.consVarEnv Map.empty varEnv
-           in interpBlock subEnv procEnv innerStmts >>= \(returned, retEnv, retVal) ->
-                if returned
-                  then return (True, Env.prevOrEmptyVarEnv retEnv, retVal)
-                  else interpBlock retEnv procEnv stmts
-        (Ast.When expr tStmts) ->
-          interpExprEnv expr >>= \check ->
-            if isTruthy check
-              then interpBlockEnv (Ast.BlockStmt tStmts : stmts)
-              else interpBlockEnv stmts
-        (Ast.WhenOtherwise expr tStmts fStmts) ->
-          interpExprEnv expr >>= \check ->
-            if isTruthy check
-              then interpBlockEnv (Ast.BlockStmt tStmts : stmts)
-              else interpBlockEnv (Ast.BlockStmt fStmts : stmts)
-        (Ast.While expr wStmts) ->
-          interpExprEnv expr >>= \check ->
-            if isTruthy check
-              then interpBlockEnv (Ast.BlockStmt wStmts : stmt : stmts)
-              else interpBlockEnv stmts
+  interpStmt varEnv procEnv stmt >>= \(returned, retEnv) ->
+    case returned of
+      (Returned retVal) -> return (Returned retVal, Env.prevOrEmptyVarEnv retEnv)
+      Finished -> interpBlock retEnv procEnv stmts
+      Broken -> return (Broken, Env.prevOrEmptyVarEnv retEnv)
+      Continued -> return (Continued, Env.prevOrEmptyVarEnv retEnv)
 
 interpProc :: Env.ProcEnv -> Ast.Procedure -> [Value] -> IO Value
 interpProc procEnv (Ast.Proc params body) args =
@@ -119,23 +141,37 @@ interpProc procEnv (Ast.Proc params body) args =
     then error "wrong number of arguments"
     else
       let argsMap = Map.fromList (zip params args)
-          newVarEnv = Env.mapToVarEnv argsMap
-       in interpBlock newVarEnv procEnv body >>= \(_, _, val) ->
-            return val
+          newVarEnv = [argsMap]
+       in interpBlock newVarEnv procEnv body >>= \(returned, _) ->
+            case returned of
+              (Returned Nothing) -> return Void
+              (Returned (Just retVal)) -> return retVal
+              Finished -> return Void
+              _ -> error "unexpected return protocol"
 interpProc procEnv (Ast.InfixL _ l r body) args =
   if length args /= 2
     then error "infix operators must take 2 arguments"
     else
       let argsMap = Map.fromList (zip [l, r] args)
-          newVarEnv = Env.mapToVarEnv argsMap
-       in interpBlock newVarEnv procEnv body >>= \(_, _, val) -> return val
+          newVarEnv = [argsMap]
+       in interpBlock newVarEnv procEnv body >>= \(returned, _) ->
+            case returned of
+              (Returned Nothing) -> return Void
+              (Returned (Just retVal)) -> return retVal
+              Finished -> return Void
+              _ -> error "unexpected return protocol"
 interpProc procEnv (Ast.InfixR _ l r body) args =
   if length args /= 2
     then error "infix operators must take 2 arguments"
     else
       let argsMap = Map.fromList (zip [l, r] args)
-          newVarEnv = Env.mapToVarEnv argsMap
-       in interpBlock newVarEnv procEnv body >>= \(_, _, val) -> return val
+          newVarEnv = [argsMap]
+       in interpBlock newVarEnv procEnv body >>= \(returned, _) ->
+            case returned of
+              (Returned Nothing) -> return Void
+              (Returned (Just retVal)) -> return retVal
+              Finished -> return Void
+              _ -> error "unexpected return protocol"
 
 interpProg :: Ast.Program -> IO Value
 interpProg (Ast.Prog procedures) =

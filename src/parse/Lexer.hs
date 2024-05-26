@@ -28,6 +28,8 @@ matchKeyword "when" = When
 matchKeyword "then" = Then
 matchKeyword "otherwise" = Otherwise
 matchKeyword "while" = While
+matchKeyword "break" = Break
+matchKeyword "continue" = Continue
 matchKeyword str = Ident str
 
 nextToken :: String -> (Token, String)

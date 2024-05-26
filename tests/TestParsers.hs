@@ -53,6 +53,10 @@ parseStmtTests =
   , ("when 1 + 2 * 3 then {x = x + 1;} otherwise x = x- 1;", "when((1+(2*3)))then{x=(x+1);}otherwise{x=(x-1);}")
   , ("when x == 1 then {a();} otherwise when x == 2 then b();", "when((x==1))then{a();}otherwise{when((x==2))then{b();}}")
   , ("while a + 1 == b then {!disp(1);}", "while(((a+1)==b))then{!disp(1);}")
+  , ("while a == 1 then {break; continue; a = 1;}", "while((a==1))then{break;continue;a=1;}")
+  , ("while a == 1 then break;", "while((a==1))then{break;}")
+  , ("while a == 1 then { when x == y then break; }", "while((a==1))then{when((x==y))then{break;}}")
+  , ("while a == 1 then { when x == y then continue; }", "while((a==1))then{when((x==y))then{continue;}}")
   ]
 
 parseProcTests =
@@ -73,7 +77,7 @@ toTest testFunction x =
 tests =
   TestList
     ( map (toTest (exprToString . fst . parseExpr Map.empty . Lexer.tokenize)) parseExprTests
-        ++ map (toTest (stmtToString . fst . parseStmt Map.empty . Lexer.tokenize)) parseStmtTests
+        ++ map (toTest (stmtToString . fst . (\stmt -> parseStmt Map.empty stmt False) . Lexer.tokenize)) parseStmtTests
         ++ map (toTest (procToString . fst . parseProc Map.empty . Lexer.tokenize)) parseProcTests
         ++ map (toTest (progToString . parseProg . Lexer.tokenize)) parseProgTests
     )

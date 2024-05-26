@@ -36,7 +36,19 @@ cradle:
     - path: "src/TreeWalk.hs"
       component: "language:exe:language"
 
-    - path: "src/RunFile.hs"
+    - path: "src/Cli.hs"
+      component: "language:exe:language"
+
+    - path: "src/Value.hs"
+      component: "language:exe:language"
+
+    - path: "src/Builtins.hs"
+      component: "language:exe:language"
+
+    - path: "src/Environment.hs"
+      component: "language:exe:language"
+
+    - path: "src/Preprocess.hs"
       component: "language:exe:language"
 
     - path: "src/parse/LangUtils.hs"
@@ -66,7 +78,19 @@ cradle:
     - path: "src/parse/TreeWalk.hs"
       component: "language:exe:language"
 
-    - path: "src/parse/RunFile.hs"
+    - path: "src/parse/Cli.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/Value.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/Builtins.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/Environment.hs"
+      component: "language:exe:language"
+
+    - path: "src/parse/Preprocess.hs"
       component: "language:exe:language"
 
     - path: "src/interp/LangUtils.hs"
@@ -96,7 +120,19 @@ cradle:
     - path: "src/interp/TreeWalk.hs"
       component: "language:exe:language"
 
-    - path: "src/interp/RunFile.hs"
+    - path: "src/interp/Cli.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/Value.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/Builtins.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/Environment.hs"
+      component: "language:exe:language"
+
+    - path: "src/interp/Preprocess.hs"
       component: "language:exe:language"
 
     - path: "src"

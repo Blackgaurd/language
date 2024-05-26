@@ -23,10 +23,17 @@
             | when <expression> then <statement>
             | when <expression> then <statement> otherwise <statement>
             # TODO: unless statement
-            | while <expression> then <statement>
+            | while <expression> then <loop-statement>
             | <expression> `<identifier>` <expression>
 
+<loop-statement> = <statement>
+                 | break ;
+                 | continue ;
+                 | <loop-block>
+
 <block> = { {<statement>}* }
+
+<loop-block> = { {<loop-statement>}* }
 
 <expression> = <prefix-op> <expression>
              | <expression> <infix-op> <expression>

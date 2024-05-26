@@ -6,14 +6,12 @@ import qualified ParseStmt
 import qualified Preprocess
 import qualified Tokens
 
--- TODO: parseInfix function
-
 parseProc :: Preprocess.ProcTypeMap -> [Tokens.Token] -> ((Ast.Identifier, Ast.Procedure), [Tokens.Token])
 parseProc procMap (Tokens.Proc : Tokens.Ident name : tks) =
   ((name, Ast.Proc args stmts), tks3)
  where
   (args, tks2) = parseProcArgs tks
-  (stmts, tks3) = ParseStmt.parseBlock procMap tks2
+  (stmts, tks3) = ParseStmt.parseBlock procMap tks2 False
 parseProc procMap tokens =
   case tokens of
     (Tokens.InfixL : Tokens.Ident name : tks) ->
@@ -34,7 +32,7 @@ parseInfixBody procMap tks = (prec, lhs, rhs, stmts, tks4)
     [l, r] -> (l, r)
     _ -> error ("infix operator must take 2 arguments, got=" ++ show (length args))
   (prec, tks3) = parseInfixPrec tks2
-  (stmts, tks4) = ParseStmt.parseBlock procMap tks3
+  (stmts, tks4) = ParseStmt.parseBlock procMap tks3 False
 
 parseInfixPrec :: [Tokens.Token] -> (Int, [Tokens.Token])
 parseInfixPrec (Tokens.LBracket : Tokens.Number prec : Tokens.RBracket : rest) =

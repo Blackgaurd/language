@@ -17,6 +17,7 @@ builtins =
     , ("!type", valType)
     , ("!ascii", ascii)
     , ("!len", len)
+    , ("!readln", readln)
     ]
 
 isBuiltin :: Ast.Identifier -> Bool
@@ -51,3 +52,8 @@ len [StringLit lit] =
   let l = toInteger (length lit)
    in return (Num l)
 len _ = error "!len takes one argument"
+
+readln :: Builtin
+readln [] = do
+  StringLit . LangUtils.stringToArray <$> getLine
+readln _ = error "!readln takes no arguments"

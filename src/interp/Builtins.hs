@@ -18,6 +18,7 @@ builtins =
     , ("!ascii", ascii)
     , ("!len", len)
     , ("!readln", readln)
+    , ("!to_int", toInt)
     ]
 
 isBuiltin :: Ast.Identifier -> Bool
@@ -57,3 +58,13 @@ readln :: Builtin
 readln [] = do
   StringLit . LangUtils.stringToArray <$> getLine
 readln _ = error "!readln takes no arguments"
+
+toInt :: Builtin
+toInt [] = error "!to_int takes one argument"
+toInt [arg] =
+  case arg of
+    (Num _) -> return arg
+    (StringLit str) -> let num = LangUtils.arrayToInteger str in return (Num num)
+    (Boolean b) -> let num = if b then 1 else 0 in return (Num num)
+    Void -> error "cannot convert void to integer"
+toInt _ = error "!to_int takes one argument"

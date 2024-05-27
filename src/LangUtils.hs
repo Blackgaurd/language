@@ -22,6 +22,16 @@ stringToArray str =
   let bounds = (0, toInteger (length str) - 1) :: (Integer, Integer)
    in Array.listArray bounds str
 
+arrayToInteger :: ArrayIC -> Integer
+arrayToInteger arr =
+  if null arr
+    then error "error converting string to integer" -- empty array
+    else
+      let str = Array.elems arr
+       in case readMaybe str of
+            Just n -> n
+            _ -> error "input is not an integer"
+
 concatArrays :: ArrayIC -> ArrayIC -> ArrayIC
 concatArrays arr1 arr2 =
   let bounds = (0, toInteger (length arr1) + toInteger (length arr2) - 1) :: (Integer, Integer)
